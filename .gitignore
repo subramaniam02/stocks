@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment
+.env
+.env.*
+
+# Personal portfolio data - all spreadsheets are private by default
+*.csv
+*.xlsx
+!sample_portfolio.csv
+
+# Unrelated files
+interview_problems.html
+problems_extracted.json
+
+# Claude Code local settings
+.claude/
+
+# Unrelated frontend files
+frontend/src/components/interviewio.html
+
+# OS
+.DS_Store
+Thumbs.db

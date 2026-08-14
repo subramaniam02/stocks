@@ -1,0 +1,42 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - db_data:/data
+    environment:
+      - DATABASE_URL=sqlite:////data/portfolio.db
+      - CHAT_DIR=/data/chat_history
+      - LLM_DEBUG_LOG=/data/llm_debug.jsonl
+      - OLLAMA_BASE_URL=http://host.docker.internal:5002
+      - OLLAMA_DIRECT_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=gemma4:latest
+      - CORS_ORIGINS=http://localhost:3000
+      - DATA_DIR=/data
+    # Pin host.docker.internal via /etc/hosts so it survives the custom DNS override
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app_net
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app_net
+
+volumes:
+  db_data:
+
+
+networks:
+  app_net:
+    driver: bridge
+    driver_opts:
+      # Lower MTU from 1500 → 1450 so curl_cffi's oversized Chrome TLS
+      # ClientHello packets are not silently dropped by Docker Desktop's VM tunnel
+      com.docker.network.driver.mtu: "1450"
