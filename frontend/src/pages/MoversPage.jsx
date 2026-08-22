@@ -8,6 +8,7 @@ import { Settings, RefreshCw } from 'lucide-react';
 import { VIS_STYLES, getTodayStyle, getOverallStyle } from '../utils/moversSettings';
 import HoldingsTable from '../components/HoldingsTable';
 import { api } from '../services/api';
+import { useTheme } from '../contexts/ThemeContext';
 import { PERIODS, periodLabel, getCachedOverallPerf, setCachedOverallPerf } from '../utils/overallPerformance';
 
 // Measures a container directly via ResizeObserver so split-treemap children can be
@@ -37,6 +38,9 @@ function useElementSize() {
   return [setRef, size];
 }
 
+// Treemap/bubble fill colors are intentionally theme-independent: each tile/bubble
+// paints its own solid background (the page background never shows through), so
+// these read fine in both light and dark mode without variants.
 function getColor(pct) {
   if (pct == null) return '#334155';
   if (pct >=  5)   return '#14532d';
@@ -111,15 +115,15 @@ const fmtWeightLog1p = v => `${invLog1p(v).toFixed(1)}%`;
 // that exact component type — it never calls a wrapper component to see what it returns —
 // so this must return a flat array of <ReferenceLine> elements to inline as chart
 // children directly, not a <GridValueLines/> element the chart would fail to recognize.
-function gridValueLines({ xTicks, yTicks, xFormat, yFormat }) {
+function gridValueLines({ xTicks, yTicks, xFormat, yFormat, color }) {
   return [
     ...(xTicks ?? []).map(t => (
       <ReferenceLine key={`gx-${t}`} x={t} stroke="none"
-        label={{ value: xFormat(t), position: 'center', fill: '#64748b', fontSize: 10 }} />
+        label={{ value: xFormat(t), position: 'center', fill: color, fontSize: 10 }} />
     )),
     ...(yTicks ?? []).map(t => (
       <ReferenceLine key={`gy-${t}`} y={t} stroke="none"
-        label={{ value: yFormat(t), position: 'right', fill: '#64748b', fontSize: 10 }} />
+        label={{ value: yFormat(t), position: 'right', fill: color, fontSize: 10 }} />
     )),
   ];
 }
@@ -200,13 +204,16 @@ function HeatCell(props) {
   );
 }
 
-function BubbleDot({ cx, cy, r, payload, onTickerClick }) {
+function BubbleDot({ cx, cy, r, payload, onTickerClick, isDark }) {
   const radius = r || 10;
   const color = getColor(payload.changePct);
   const inside = radius >= 14;
   const showPrice = inside && radius > 22 && payload.currentPrice != null;
   const tickerY = showPrice ? cy - radius * 0.18 : cy;
   const priceY  = cy + radius * 0.38;
+  // The small-dot ticker label sits outside the bubble, directly on the chart
+  // background, so (unlike the bubble fill itself) it needs a theme-aware color.
+  const outsideLabelColor = isDark ? '#94a3b8' : '#64748b';
   return (
     <g onClick={() => onTickerClick?.(payload.name)} style={{ cursor: 'pointer' }}>
       <circle cx={cx} cy={cy} r={radius} fill={color} fillOpacity={0.85} stroke={color} strokeWidth={1} />
@@ -227,7 +234,7 @@ function BubbleDot({ cx, cy, r, payload, onTickerClick }) {
         </>
       ) : (
         <text x={cx} y={cy + radius + 9} textAnchor="middle" dominantBaseline="middle"
-          fill="#94a3b8" fontSize={9} fontWeight="600"
+          fill={outsideLabelColor} fontSize={9} fontWeight="600"
           fontFamily="ui-sans-serif,system-ui,sans-serif">
           {payload.name}
         </text>
@@ -241,20 +248,20 @@ function BubbleTooltip({ active, payload }) {
   const d = payload[0].payload;
   const isPos = (d.changePct ?? 0) >= 0;
   return (
-    <div className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-xs shadow-xl">
-      <p className="font-bold text-white mb-1">{d.name}</p>
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs shadow-xl">
+      <p className="font-bold text-slate-900 dark:text-white mb-1">{d.name}</p>
       {d.currentPrice != null && (
-        <p className="text-slate-200 mb-1 tabular-nums font-semibold">
+        <p className="text-slate-700 dark:text-slate-200 mb-1 tabular-nums font-semibold">
           ${d.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       )}
-      <p className={isPos ? 'text-emerald-400' : 'text-red-400'}>
+      <p className={isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}>
         {isPos ? '+' : ''}{(d.changePct ?? 0).toFixed(2)}% today
       </p>
       {d.changeDollar != null && (
-        <p className="text-slate-300">{fmtDollar(d.changeDollar)} portfolio impact</p>
+        <p className="text-slate-600 dark:text-slate-300">{fmtDollar(d.changeDollar)} portfolio impact</p>
       )}
-      <p className="text-slate-400">${(d.size / 1000).toFixed(1)}K position</p>
+      <p className="text-slate-500 dark:text-slate-400">${(d.size / 1000).toFixed(1)}K position</p>
     </div>
   );
 }
@@ -264,20 +271,20 @@ function OverallBubbleTooltip({ active, payload }) {
   const d = payload[0].payload;
   const isPos = (d.changePct ?? 0) >= 0;
   return (
-    <div className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-xs shadow-xl">
-      <p className="font-bold text-white mb-1">{d.name}</p>
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs shadow-xl">
+      <p className="font-bold text-slate-900 dark:text-white mb-1">{d.name}</p>
       {d.currentPrice != null && (
-        <p className="text-slate-200 mb-1 tabular-nums font-semibold">
+        <p className="text-slate-700 dark:text-slate-200 mb-1 tabular-nums font-semibold">
           ${d.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       )}
-      <p className={isPos ? 'text-emerald-400' : 'text-red-400'}>
+      <p className={isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}>
         {isPos ? '+' : ''}{(d.changePct ?? 0).toFixed(2)}% overall gain
       </p>
       {d.changeDollar != null && (
-        <p className="text-slate-300">{fmtDollar(d.changeDollar)} unrealized</p>
+        <p className="text-slate-600 dark:text-slate-300">{fmtDollar(d.changeDollar)} unrealized</p>
       )}
-      <p className="text-slate-400">{d.portfolioWeight?.toFixed(1)}% of portfolio · ${(d.size / 1000).toFixed(1)}K</p>
+      <p className="text-slate-500 dark:text-slate-400">{d.portfolioWeight?.toFixed(1)}% of portfolio · ${(d.size / 1000).toFixed(1)}K</p>
     </div>
   );
 }
@@ -296,15 +303,15 @@ const LEGEND = [
 
 function PeriodPerformanceRow({ d, onTickerClick, sortKey }) {
   const pos = (d.changePct ?? 0) >= 0;
-  const color = pos ? 'text-emerald-400' : 'text-red-400';
+  const color = pos ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400';
   const perSharePos = (d.priceChange ?? 0) >= 0;
-  const perShareColor = perSharePos ? 'text-emerald-400' : 'text-red-400';
+  const perShareColor = perSharePos ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400';
   return (
     <button
       onClick={() => onTickerClick?.(d.name)}
-      className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-800/60 transition-colors text-left"
+      className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors text-left"
     >
-      <span className="flex-1 min-w-0 text-xs font-semibold text-slate-200 truncate">{d.name}</span>
+      <span className="flex-1 min-w-0 text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{d.name}</span>
       <span className={`w-14 text-right text-xs tabular-nums shrink-0 ${sortKey === 'priceChange' ? 'font-bold' : ''} ${perShareColor}`}>
         {d.priceChange != null ? fmtPrice(d.priceChange) : '—'}
       </span>
@@ -341,36 +348,43 @@ function PeriodPerformancePanel({ stocks, totalDollar, totalPct, periodText, onT
   const totalPos = totalDollar >= 0;
 
   return (
-    <div className="w-72 shrink-0 h-full min-h-0 border-l border-slate-800 flex flex-col overflow-hidden">
-      <div className="px-3 py-2.5 border-b border-slate-800 bg-slate-800/30 shrink-0">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-          Portfolio Performance <span className="text-slate-500 normal-case font-normal">· {periodText}</span>
+    <div className="w-72 shrink-0 h-full min-h-0 border-l border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden">
+      <div className="px-3 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-800/30 shrink-0">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+          Portfolio Performance <span className="text-slate-400 dark:text-slate-500 normal-case font-normal">· {periodText}</span>
         </p>
         <div className="flex items-baseline gap-2">
-          <span className={`text-sm font-bold tabular-nums ${totalPos ? 'text-emerald-400' : 'text-red-400'}`}>
+          <span className={`text-sm font-bold tabular-nums ${totalPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
             {fmtDollar(totalDollar)}
           </span>
-          <span className={`text-xs font-semibold tabular-nums ${totalPos ? 'text-emerald-400' : 'text-red-400'}`}>
+          <span className={`text-xs font-semibold tabular-nums ${totalPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
             ({totalPos ? '+' : ''}{totalPct.toFixed(2)}%)
           </span>
         </div>
       </div>
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-800 text-[10px] font-semibold text-slate-500 uppercase tracking-wider shrink-0">
-        <button onClick={() => handleSort('name')} className="flex-1 text-left hover:text-slate-300 transition-colors">Ticker</button>
-        <button onClick={() => handleSort('priceChange')} className="w-14 text-right hover:text-slate-300 transition-colors">$/sh</button>
-        <button onClick={() => handleSort('changeDollar')} className="w-16 text-right hover:text-slate-300 transition-colors">$</button>
-        <button onClick={() => handleSort('changePct')} className="w-14 text-right hover:text-slate-300 transition-colors">%</button>
+      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 text-[10px] font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider shrink-0">
+        <button onClick={() => handleSort('name')} className="flex-1 text-left hover:text-slate-800 dark:hover:text-slate-300 transition-colors">Ticker</button>
+        <button onClick={() => handleSort('priceChange')} className="w-14 text-right hover:text-slate-800 dark:hover:text-slate-300 transition-colors">$/sh</button>
+        <button onClick={() => handleSort('changeDollar')} className="w-16 text-right hover:text-slate-800 dark:hover:text-slate-300 transition-colors">$</button>
+        <button onClick={() => handleSort('changePct')} className="w-14 text-right hover:text-slate-800 dark:hover:text-slate-300 transition-colors">%</button>
       </div>
       <div className="overflow-y-auto flex-1 min-h-0">
         {sorted.length > 0
           ? sorted.map(d => <PeriodPerformanceRow key={d.name} d={d} sortKey={sortKey} onTickerClick={onTickerClick} />)
-          : <p className="text-xs text-slate-600 px-3 py-3">No data</p>}
+          : <p className="text-xs text-slate-400 dark:text-slate-600 px-3 py-3">No data</p>}
       </div>
     </div>
   );
 }
 
 export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, onRefresh, lastRefreshed, period, onPeriodChange }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const chartGridColor = isDark ? '#334155' : '#e2e8f0';
+  const chartAxisLineColor = isDark ? '#334155' : '#cbd5e1';
+  const chartTickColor = isDark ? '#94a3b8' : '#64748b';
+  const chartLabelColor = isDark ? '#64748b' : '#94a3b8';
+  const chartRefLineColor = isDark ? '#475569' : '#94a3b8';
   const [section, setSection] = useState('trend'); // 'trend' | 'table'
   const [todayStyle] = useState(getTodayStyle);
   const [overallStyle] = useState(getOverallStyle);
@@ -529,7 +543,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
 
   if (!portfolio?.stocks?.length) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-slate-900 text-slate-500 text-sm">
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 text-sm">
         No holdings yet. Add a stock or import a CSV to get started.
       </div>
     );
@@ -540,16 +554,16 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
   const activeStyle = isToday ? todayStyle : overallStyle;
 
   return (
-    <div className="flex-1 bg-slate-900 flex flex-col">
+    <div className="flex-1 bg-white dark:bg-slate-900 flex flex-col">
       {/* Controls bar */}
-      <div className="flex items-center gap-3 px-4 py-2 border-b border-slate-800">
+      <div className="flex items-center gap-3 px-4 py-2 border-b border-slate-200 dark:border-slate-800">
         {section !== 'table' && LEGEND.map(({ label, color }) => (
           <div key={label} className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm shrink-0" style={{ background: color }} />
-            <span className="text-[10px] text-slate-400 whitespace-nowrap">{label}</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">{label}</span>
           </div>
         ))}
-        <span className="ml-auto text-[10px] text-slate-500">
+        <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-500">
           {section === 'table'
             ? `${portfolio.stocks.length} tickers · ${portfolio.stocks.reduce((n, s) => n + s.lots.length, 0)} lots`
             : isToday
@@ -559,13 +573,13 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
         </span>
         {section === 'trend' && (
           <>
-            <div className="flex items-center gap-0.5 bg-slate-800 rounded-md p-0.5">
+            <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-md p-0.5">
               {PERIODS.map(p => (
                 <button
                   key={p.value}
                   onClick={() => onPeriodChange(p.value)}
                   className={`px-2 py-1 text-[11px] font-medium rounded transition-colors ${
-                    period === p.value ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'
+                    period === p.value ? 'bg-slate-600 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   {p.label}
@@ -577,7 +591,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
                 onClick={() => loadOverallPerf(period, true)}
                 disabled={loadingOverallPerf}
                 title="Refresh"
-                className="flex items-center justify-center w-6 h-6 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-40"
+                className="flex items-center justify-center w-6 h-6 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingOverallPerf ? 'animate-spin' : ''}`} />
               </button>
@@ -585,13 +599,13 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
           </>
         )}
         {/* Section toggle */}
-        <div className="flex items-center gap-0.5 ml-3 bg-slate-800 rounded-md p-0.5">
+        <div className="flex items-center gap-0.5 ml-3 bg-slate-100 dark:bg-slate-800 rounded-md p-0.5">
           {[['trend', 'Trends'], ['table', 'Table']].map(([mode, label]) => (
             <button
               key={mode}
               onClick={() => setSection(mode)}
               className={`px-2.5 py-1 text-[11px] font-medium rounded transition-colors ${
-                section === mode ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'
+                section === mode ? 'bg-slate-600 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {label}
@@ -602,7 +616,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
           <button
             onClick={onOpenSettings}
             title="Visualization settings"
-            className="flex items-center justify-center w-6 h-6 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="flex items-center justify-center w-6 h-6 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
@@ -616,7 +630,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
         <div className="flex flex-1" style={{ height: contentHeight }}>
           <div ref={todayRowRef} className="flex flex-1 min-w-0">
             {/* Red (losers) — left half */}
-            <div className="border-r border-slate-800 min-w-0" style={{ width: todayRowSize.width / 2 }}>
+            <div className="border-r border-slate-200 dark:border-slate-800 min-w-0" style={{ width: todayRowSize.width / 2 }}>
               {redData.length > 0 ? (
                 todayRowSize.width > 0 && todayRowSize.height > 0 && (
                   <Treemap
@@ -629,7 +643,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
                   />
                 )
               ) : (
-                <div className="flex items-center justify-center h-full text-slate-600 text-sm">
+                <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-600 text-sm">
                   No losers today
                 </div>
               )}
@@ -648,7 +662,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
                   />
                 )
               ) : (
-                <div className="flex items-center justify-center h-full text-slate-600 text-sm">
+                <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-600 text-sm">
                   No gainers today
                 </div>
               )}
@@ -662,12 +676,12 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
         /* Bubble chart: X = % change, Y = $ portfolio impact, size = position value */
         <div className="flex flex-1" style={{ height: contentHeight }}>
           <div className="flex-1 min-w-0 px-4 py-4">
-            <p className="text-[10px] text-slate-500 mb-1 text-center">
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-1 text-center">
               Bubble size = position value · X = today's % change · Y = $ impact on your portfolio
             </p>
             <ResponsiveContainer width="100%" height="93%">
               <ScatterChart margin={{ top: 16, right: 40, bottom: 36, left: 64 }}>
-                <CartesianGrid stroke="#334155" strokeOpacity={0.4} strokeWidth={1} />
+                <CartesianGrid stroke={chartGridColor} strokeOpacity={0.4} strokeWidth={1} />
                 <XAxis
                   type="number"
                   dataKey="xPos"
@@ -675,10 +689,10 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
                   domain={todayXDomain}
                   ticks={todayXTicks}
                   tickFormatter={fmtPctSigned1}
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
-                  axisLine={{ stroke: '#334155' }}
+                  tick={{ fill: chartTickColor, fontSize: 11 }}
+                  axisLine={{ stroke: chartAxisLineColor }}
                   tickLine={false}
-                  label={{ value: "Today's Return (%) — log scale", position: 'insideBottom', offset: -16, fill: '#64748b', fontSize: 11 }}
+                  label={{ value: "Today's Return (%) — log scale", position: 'insideBottom', offset: -16, fill: chartLabelColor, fontSize: 11 }}
                 />
                 <YAxis
                   type="number"
@@ -687,20 +701,20 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
                   domain={todayYDomain}
                   ticks={todayYTicks}
                   tickFormatter={fmtDollarSignedLog}
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
+                  tick={{ fill: chartTickColor, fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
-                  label={{ value: 'Portfolio $ Impact — log scale', angle: -90, position: 'insideLeft', offset: 10, fill: '#64748b', fontSize: 11 }}
+                  label={{ value: 'Portfolio $ Impact — log scale', angle: -90, position: 'insideLeft', offset: 10, fill: chartLabelColor, fontSize: 11 }}
                 />
                 <ZAxis dataKey="size" range={[300, 4000]} name="Position Value" />
-                <ReferenceLine x={0} stroke="#475569" strokeWidth={1} />
-                <ReferenceLine y={0} stroke="#475569" strokeWidth={1} strokeDasharray="4 4" />
-                {gridValueLines({ xTicks: todayXTicks, yTicks: todayYTicks, xFormat: fmtPctSigned1, yFormat: fmtDollarSignedLog })}
+                <ReferenceLine x={0} stroke={chartRefLineColor} strokeWidth={1} />
+                <ReferenceLine y={0} stroke={chartRefLineColor} strokeWidth={1} strokeDasharray="4 4" />
+                {gridValueLines({ xTicks: todayXTicks, yTicks: todayYTicks, xFormat: fmtPctSigned1, yFormat: fmtDollarSignedLog, color: chartLabelColor })}
                 <Tooltip content={<BubbleTooltip />} cursor={false} />
                 <Scatter
                   data={barData.filter(d => d.changeDollar != null)}
                   isAnimationActive={false}
-                  shape={(props) => <BubbleDot {...props} onTickerClick={onTickerClick} />}
+                  shape={(props) => <BubbleDot {...props} onTickerClick={onTickerClick} isDark={isDark} />}
                 />
               </ScatterChart>
             </ResponsiveContainer>
@@ -710,13 +724,13 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
       )}
 
       {section === 'trend' && !isToday && loadingOverallPerf && !overallPerf && (
-        <div className="flex-1 flex items-center justify-center text-slate-500 text-sm" style={{ height: contentHeight }}>
+        <div className="flex-1 flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm" style={{ height: contentHeight }}>
           Loading period performance…
         </div>
       )}
 
       {section === 'trend' && !isToday && overallPerfError && (
-        <div className="flex-1 flex items-center justify-center text-red-400 text-sm" style={{ height: contentHeight }}>
+        <div className="flex-1 flex items-center justify-center text-red-500 dark:text-red-400 text-sm" style={{ height: contentHeight }}>
           {overallPerfError}
         </div>
       )}
@@ -725,7 +739,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
         /* Split Treemap: left = losers, right = gainers, colored by gain/loss % over the selected period */
         <div className="flex flex-1" style={{ height: contentHeight }}>
           <div ref={overallRowRef} className="flex flex-1 min-w-0">
-            <div className="border-r border-slate-800 min-w-0" style={{ width: overallRowSize.width / 2 }}>
+            <div className="border-r border-slate-200 dark:border-slate-800 min-w-0" style={{ width: overallRowSize.width / 2 }}>
               {overallRed.length > 0 ? (
                 overallRowSize.width > 0 && overallRowSize.height > 0 && (
                   <Treemap
@@ -738,7 +752,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
                   />
                 )
               ) : (
-                <div className="flex items-center justify-center h-full text-slate-600 text-sm">
+                <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-600 text-sm">
                   No positions at a loss
                 </div>
               )}
@@ -756,7 +770,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
                   />
                 )
               ) : (
-                <div className="flex items-center justify-center h-full text-slate-600 text-sm">
+                <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-600 text-sm">
                   No positions with gains
                 </div>
               )}
@@ -776,12 +790,12 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
         /* Overall bubble chart: X = gain/loss % over the selected period, Y = portfolio weight % */
         <div className="flex flex-1" style={{ height: contentHeight }}>
           <div className="flex-1 min-w-0 px-4 py-4">
-            <p className="text-[10px] text-slate-500 mb-1 text-center">
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-1 text-center">
               Bubble size = position value · X = gain/loss % over the selected period · Y = % of portfolio
             </p>
             <ResponsiveContainer width="100%" height="93%">
               <ScatterChart margin={{ top: 16, right: 40, bottom: 36, left: 64 }}>
-                <CartesianGrid stroke="#334155" strokeOpacity={0.4} strokeWidth={1} />
+                <CartesianGrid stroke={chartGridColor} strokeOpacity={0.4} strokeWidth={1} />
                 <XAxis
                   type="number"
                   dataKey="xPos"
@@ -789,10 +803,10 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
                   domain={overallXDomain}
                   ticks={overallXTicks}
                   tickFormatter={fmtPctSigned0}
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
-                  axisLine={{ stroke: '#334155' }}
+                  tick={{ fill: chartTickColor, fontSize: 11 }}
+                  axisLine={{ stroke: chartAxisLineColor }}
                   tickLine={false}
-                  label={{ value: 'Gain/Loss (%) over period — log scale', position: 'insideBottom', offset: -16, fill: '#64748b', fontSize: 11 }}
+                  label={{ value: 'Gain/Loss (%) over period — log scale', position: 'insideBottom', offset: -16, fill: chartLabelColor, fontSize: 11 }}
                 />
                 <YAxis
                   type="number"
@@ -801,19 +815,19 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
                   domain={overallYDomain}
                   ticks={overallYTicks}
                   tickFormatter={fmtWeightLog1p}
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
+                  tick={{ fill: chartTickColor, fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
-                  label={{ value: '% of Portfolio — log scale', angle: -90, position: 'insideLeft', offset: 10, fill: '#64748b', fontSize: 11 }}
+                  label={{ value: '% of Portfolio — log scale', angle: -90, position: 'insideLeft', offset: 10, fill: chartLabelColor, fontSize: 11 }}
                 />
                 <ZAxis dataKey="size" range={[120, 1400]} name="Position Value" />
-                <ReferenceLine x={0} stroke="#475569" strokeWidth={1} />
-                {gridValueLines({ xTicks: overallXTicks, yTicks: overallYTicks, xFormat: fmtPctSigned0, yFormat: fmtWeightLog1p })}
+                <ReferenceLine x={0} stroke={chartRefLineColor} strokeWidth={1} />
+                {gridValueLines({ xTicks: overallXTicks, yTicks: overallYTicks, xFormat: fmtPctSigned0, yFormat: fmtWeightLog1p, color: chartLabelColor })}
                 <Tooltip content={<OverallBubbleTooltip />} cursor={false} />
                 <Scatter
                   data={overallData}
                   isAnimationActive={false}
-                  shape={(props) => <BubbleDot {...props} onTickerClick={onTickerClick} />}
+                  shape={(props) => <BubbleDot {...props} onTickerClick={onTickerClick} isDark={isDark} />}
                 />
               </ScatterChart>
             </ResponsiveContainer>
