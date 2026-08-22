@@ -274,6 +274,11 @@ export const api = {
     return handleResponse(response);
   },
 
+  async getWatchlistQuotes() {
+    const response = await fetch(`${API_BASE}/watchlist/quotes`);
+    return handleResponse(response);
+  },
+
   async addToWatchlist(ticker) {
     const response = await fetch(`${API_BASE}/watchlist`, {
       method: 'POST',

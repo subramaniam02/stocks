@@ -8,6 +8,7 @@ import TickerDetailPanel from './components/TickerDetailPanel';
 import AIChatWidget from './components/AIChatWidget';
 import TopMoversWidget from './components/TopMoversWidget';
 import PortfolioMixWidget from './components/PortfolioMixWidget';
+import WatchlistWidget from './components/WatchlistWidget';
 import NetWealthWidget from './components/NetWealthWidget';
 import MarketInsights, { startMarketInsightsAutoRefresh } from './pages/MarketInsights';
 import RealizedPage from './pages/RealizedPage';
@@ -160,7 +161,7 @@ function TickerSearch({ onSearch }) {
 }
 
 function LeftRail({ portfolio, currentPage, onSettings, onTickerClick }) {
-  // 'movers' | 'mix' | 'wealth' | 'ai' | null — mutually exclusive, closed by default.
+  // 'movers' | 'mix' | 'watchlist' | 'wealth' | 'ai' | null — mutually exclusive, closed by default.
   const [openPanel, setOpenPanel] = useState(null);
 
   return (
@@ -180,6 +181,12 @@ function LeftRail({ portfolio, currentPage, onSettings, onTickerClick }) {
           portfolio={portfolio}
           open={openPanel === 'mix'}
           onOpenChange={(v) => setOpenPanel(v ? 'mix' : null)}
+          onTickerClick={onTickerClick}
+        />
+        <div className="w-6 h-px bg-slate-800 my-1" />
+        <WatchlistWidget
+          open={openPanel === 'watchlist'}
+          onOpenChange={(v) => setOpenPanel(v ? 'watchlist' : null)}
           onTickerClick={onTickerClick}
         />
         <div className="w-6 h-px bg-slate-800 my-1" />

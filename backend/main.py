@@ -199,6 +199,13 @@ def get_watchlist(db: Session = Depends(get_db)):
     return watchlist.get_all(db)
 
 
+@app.get("/api/watchlist/quotes")
+def get_watchlist_quotes(db: Session = Depends(get_db)):
+    """Watchlist tickers with current price and today's % change, for the
+    sidebar widget."""
+    return watchlist.get_quotes(db)
+
+
 @app.post("/api/watchlist", response_model=schemas.WatchlistItem)
 def add_to_watchlist(item: schemas.WatchlistCreate, db: Session = Depends(get_db)):
     if not stock_data.validate_ticker(item.ticker):

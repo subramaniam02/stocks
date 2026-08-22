@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List
 import models
+from services.stock_data import get_portfolio_data_bulk
 
 
 def get_all(db: Session) -> List[models.Watchlist]:
@@ -32,6 +33,24 @@ def remove_ticker(db: Session, ticker: str) -> bool:
     db.delete(entry)
     db.commit()
     return True
+
+
+def get_quotes(db: Session) -> List[dict]:
+    """Watchlist tickers enriched with current price and today's % change,
+    fetched via the same bulk pricing path used for portfolio holdings."""
+    tickers = [w.ticker for w in get_all(db)]
+    if not tickers:
+        return []
+    bulk = get_portfolio_data_bulk(tickers)
+    return [
+        {
+            "ticker": ticker,
+            "name": bulk.get(ticker, {}).get("name"),
+            "price": bulk.get(ticker, {}).get("price"),
+            "change_pct": bulk.get(ticker, {}).get("1d"),
+        }
+        for ticker in tickers
+    ]
 
 
 def backfill_from_holdings_and_realized(db: Session) -> int:
