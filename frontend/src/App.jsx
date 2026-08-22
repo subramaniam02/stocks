@@ -14,7 +14,6 @@ import MarketInsights, { startMarketInsightsAutoRefresh } from './pages/MarketIn
 import RealizedPage from './pages/RealizedPage';
 import WatchlistPage from './pages/WatchlistPage';
 import AlertsPage from './pages/AlertsPage';
-import AlertsPanel from './components/AlertsPanel';
 import SettingsPage from './pages/SettingsPage';
 
 function fmt(n) { return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
@@ -227,7 +226,6 @@ export default function App() {
   const [lastRefreshed, setLastRefreshed] = useState(null);
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [realized, setRealized] = useState([]);
-  const [alertsPanelOpen, setAlertsPanelOpen] = useState(false);
   const [alerts, setAlerts] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [trendsPeriod, setTrendsPeriod] = useState('1d');
@@ -365,7 +363,7 @@ export default function App() {
     );
   }
 
-  const navBtn = (page, icon, label) => (
+  const navBtn = (page, icon, label, badge) => (
     <button
       onClick={() => setCurrentPage(page)}
       className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
@@ -375,6 +373,11 @@ export default function App() {
       }`}
     >
       {icon}{label}
+      {badge > 0 && (
+        <span className="ml-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white rounded-full">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </button>
   );
 
@@ -396,7 +399,7 @@ export default function App() {
               {navBtn('insights', <BarChart3   className="w-4 h-4" />, 'Market')}
               {navBtn('realized', <Receipt     className="w-4 h-4" />, 'Taxes')}
               {navBtn('watchlist', <Star       className="w-4 h-4" />, 'Watchlist')}
-              {navBtn('alerts',   <Bell        className="w-4 h-4" />, 'Alerts')}
+              {navBtn('alerts',   <Bell        className="w-4 h-4" />, 'Alerts', unreadCount)}
               <div className="w-px h-5 bg-slate-700 mx-1" />
               <TickerSearch onSearch={handleTickerClick} />
             </div>
@@ -406,35 +409,6 @@ export default function App() {
               <button onClick={() => setDialog('manual')} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-md transition-colors">
                 <Plus className="w-4 h-4" />Add Stock
               </button>
-              <div className="w-px h-5 bg-slate-700 mx-1" />
-              {/* Alerts bell */}
-              <div className="relative">
-                <button
-                  onClick={() => setAlertsPanelOpen(o => !o)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    alertsPanelOpen
-                      ? 'bg-slate-600 text-white'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                  }`}
-                >
-                  <Bell className="w-4 h-4" />
-                  Alerts
-                  {unreadCount > 0 && (
-                    <span className="ml-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white rounded-full">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-                {alertsPanelOpen && (
-                  <AlertsPanel
-                    alerts={alerts}
-                    unreadCount={unreadCount}
-                    onMarkRead={handleMarkAlertRead}
-                    onMarkAllRead={handleMarkAllRead}
-                    onClose={() => setAlertsPanelOpen(false)}
-                  />
-                )}
-              </div>
             </div>
           </div>
         </div>
