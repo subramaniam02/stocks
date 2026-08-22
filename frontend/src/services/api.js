@@ -240,6 +240,16 @@ export const api = {
     return handleResponse(response);
   },
 
+  async getLiveAlertConditions() {
+    const response = await fetch(`${API_BASE}/alerts/live`);
+    return handleResponse(response);
+  },
+
+  async clearAllAlerts() {
+    const response = await fetch(`${API_BASE}/alerts`, { method: 'DELETE' });
+    return handleResponse(response);
+  },
+
   async markAlertRead(alertId) {
     const response = await fetch(`${API_BASE}/alerts/${alertId}/read`, { method: 'POST' });
     return handleResponse(response);

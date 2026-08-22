@@ -740,6 +740,13 @@ def get_alerts(unread_only: bool = False, limit: int = 50, db: Session = Depends
     return q.limit(limit).all()
 
 
+@app.get("/api/alerts/live")
+def get_live_alert_conditions(db: Session = Depends(get_db)):
+    """Real-time view of tickers/lots currently satisfying each alert
+    condition (portfolio drop, lot profit crossing), for the Alerts page."""
+    return alert_checker.get_live_conditions(db)
+
+
 @app.get("/api/alerts/unread-count")
 def get_unread_alert_count(db: Session = Depends(get_db)):
     """Get count of unread alerts."""

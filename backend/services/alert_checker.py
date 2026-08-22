@@ -234,6 +234,57 @@ def track_lot_gains(db: Session) -> int:
     return newly_crossed
 
 
+def get_live_conditions(db: Session) -> dict:
+    """Real-time view of which tickers/lots currently satisfy each alert
+    condition, independent of whether an Alert row has actually fired (the
+    lot-crossing alert only fires on the way back down through the
+    threshold, so this also surfaces lots currently sitting above it)."""
+    settings = _load_settings()
+
+    try:
+        port = portfolio_svc.get_portfolio_with_performance(db)
+    except Exception as e:
+        print(f"Live conditions: failed to load portfolio: {e}")
+        port = None
+
+    lots_above_threshold = []
+    if port:
+        for stock in port.stocks:
+            for lot in stock.lots:
+                if lot.price_stale:
+                    continue
+                if lot.gain_loss_pct >= LOT_PROFIT_THRESHOLD:
+                    lots_above_threshold.append({
+                        "ticker": stock.ticker,
+                        "lot_id": lot.id,
+                        "purchase_date": lot.purchase_date.isoformat(),
+                        "quantity": lot.quantity,
+                        "gain_loss_pct": round(lot.gain_loss_pct, 2),
+                        "gain_loss": round(lot.gain_loss, 2),
+                    })
+    lots_above_threshold.sort(key=lambda x: x["gain_loss_pct"], reverse=True)
+
+    today_pct = _compute_today_pct(port) if port is not None else None
+    state = _load_state()
+
+    return {
+        "lot_crossing": {
+            "enabled": settings["lot_crossing_enabled"],
+            "threshold_pct": LOT_PROFIT_THRESHOLD,
+            "lots_above_threshold": lots_above_threshold,
+            "pending_crossing_tickers": state["pending_lot_crossings"],
+        },
+        "portfolio_drop": {
+            "enabled": settings["portfolio_drop_enabled"],
+            "threshold_pct": INTRADAY_DROP_THRESHOLD_PCT,
+            "today_pct": round(today_pct, 2) if today_pct is not None else None,
+            "triggered": today_pct is not None and today_pct <= INTRADAY_DROP_THRESHOLD_PCT,
+        },
+        "must_act_enabled": settings["must_act_enabled"],
+        "market_close_review_enabled": settings["market_close_review_enabled"],
+    }
+
+
 def _drop_and_crossing_reason(db: Session, settings: dict, state: dict) -> tuple:
     """Shared by run_midday_checks/run_eod_checks: checks the portfolio-drop
     and pending-lot-crossing conditions (each gated by its own toggle) and

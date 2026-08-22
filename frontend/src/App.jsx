@@ -13,6 +13,7 @@ import NetWealthWidget from './components/NetWealthWidget';
 import MarketInsights, { startMarketInsightsAutoRefresh } from './pages/MarketInsights';
 import RealizedPage from './pages/RealizedPage';
 import WatchlistPage from './pages/WatchlistPage';
+import AlertsPage from './pages/AlertsPage';
 import AlertsPanel from './components/AlertsPanel';
 import SettingsPage from './pages/SettingsPage';
 
@@ -395,6 +396,7 @@ export default function App() {
               {navBtn('insights', <BarChart3   className="w-4 h-4" />, 'Market')}
               {navBtn('realized', <Receipt     className="w-4 h-4" />, 'Taxes')}
               {navBtn('watchlist', <Star       className="w-4 h-4" />, 'Watchlist')}
+              {navBtn('alerts',   <Bell        className="w-4 h-4" />, 'Alerts')}
               <div className="w-px h-5 bg-slate-700 mx-1" />
               <TickerSearch onSearch={handleTickerClick} />
             </div>
@@ -493,6 +495,16 @@ export default function App() {
             onTickerClick={handleTickerClick}
             onAddToWatchlist={handleAddToWatchlist}
             onRemoveFromWatchlist={handleRemoveFromWatchlist}
+          />
+        )}
+        {currentPage === 'alerts' && (
+          <AlertsPage
+            alerts={alerts}
+            unreadCount={unreadCount}
+            onMarkRead={handleMarkAlertRead}
+            onMarkAllRead={handleMarkAllRead}
+            onRefreshAlerts={loadAlerts}
+            onTickerClick={handleTickerClick}
           />
         )}
         {currentPage === 'settings' && (
