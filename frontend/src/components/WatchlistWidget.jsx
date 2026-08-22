@@ -34,7 +34,7 @@ function WatchlistRow({ quote, onTickerClick, onRemove }) {
   );
 }
 
-export default function WatchlistWidget({ open, onOpenChange, onTickerClick }) {
+export default function WatchlistWidget({ open, onOpenChange, onTickerClick, onRemoveFromWatchlist }) {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const panelRef = useRef(null);
@@ -68,7 +68,7 @@ export default function WatchlistWidget({ open, onOpenChange, onTickerClick }) {
   const handleRemove = async (ticker) => {
     setQuotes(prev => prev.filter(q => q.ticker !== ticker));
     try {
-      await api.removeFromWatchlist(ticker);
+      await onRemoveFromWatchlist?.(ticker);
     } catch {
       load(); // out of sync with the server — resync
     }

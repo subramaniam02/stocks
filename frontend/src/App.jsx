@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { RefreshCw, BarChart3, TrendingUp, Plus, LineChart, LayoutDashboard, Receipt, Bell, Settings, Search } from 'lucide-react';
+import { RefreshCw, BarChart3, TrendingUp, Plus, LineChart, LayoutDashboard, Receipt, Bell, Settings, Search, Star } from 'lucide-react';
 import { api } from './services/api';
 import AddStockDialog from './components/AddStockDialog';
 import MoversPage from './pages/MoversPage';
@@ -12,6 +12,7 @@ import WatchlistWidget from './components/WatchlistWidget';
 import NetWealthWidget from './components/NetWealthWidget';
 import MarketInsights, { startMarketInsightsAutoRefresh } from './pages/MarketInsights';
 import RealizedPage from './pages/RealizedPage';
+import WatchlistPage from './pages/WatchlistPage';
 import AlertsPanel from './components/AlertsPanel';
 import SettingsPage from './pages/SettingsPage';
 
@@ -160,7 +161,7 @@ function TickerSearch({ onSearch }) {
   );
 }
 
-function LeftRail({ portfolio, currentPage, onSettings, onTickerClick }) {
+function LeftRail({ portfolio, currentPage, onSettings, onTickerClick, onRemoveFromWatchlist }) {
   // 'movers' | 'mix' | 'watchlist' | 'wealth' | 'ai' | null — mutually exclusive, closed by default.
   const [openPanel, setOpenPanel] = useState(null);
 
@@ -188,6 +189,7 @@ function LeftRail({ portfolio, currentPage, onSettings, onTickerClick }) {
           open={openPanel === 'watchlist'}
           onOpenChange={(v) => setOpenPanel(v ? 'watchlist' : null)}
           onTickerClick={onTickerClick}
+          onRemoveFromWatchlist={onRemoveFromWatchlist}
         />
         <div className="w-6 h-px bg-slate-800 my-1" />
         <NetWealthWidget
@@ -277,8 +279,15 @@ export default function App() {
   }, []);
 
   const handleAddToWatchlist = useCallback(async (ticker) => {
+    ticker = ticker.toUpperCase();
     await api.addToWatchlist(ticker);
     setWatchlist(prev => prev.includes(ticker) ? prev : [...prev, ticker]);
+  }, []);
+
+  const handleRemoveFromWatchlist = useCallback(async (ticker) => {
+    ticker = ticker.toUpperCase();
+    await api.removeFromWatchlist(ticker);
+    setWatchlist(prev => prev.filter(t => t !== ticker));
   }, []);
 
   const loadPortfolio = useCallback(async () => {
@@ -385,6 +394,7 @@ export default function App() {
               {navBtn('history',  <LineChart       className="w-4 h-4" />, 'Performance')}
               {navBtn('insights', <BarChart3   className="w-4 h-4" />, 'Market')}
               {navBtn('realized', <Receipt     className="w-4 h-4" />, 'Taxes')}
+              {navBtn('watchlist', <Star       className="w-4 h-4" />, 'Watchlist')}
               <div className="w-px h-5 bg-slate-700 mx-1" />
               <TickerSearch onSearch={handleTickerClick} />
             </div>
@@ -478,6 +488,13 @@ export default function App() {
             <RealizedPage onSave={loadRealized} />
           </main>
         )}
+        {currentPage === 'watchlist' && (
+          <WatchlistPage
+            onTickerClick={handleTickerClick}
+            onAddToWatchlist={handleAddToWatchlist}
+            onRemoveFromWatchlist={handleRemoveFromWatchlist}
+          />
+        )}
         {currentPage === 'settings' && (
           <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
             <SettingsPage
@@ -518,7 +535,7 @@ export default function App() {
         />
       )}
 
-      <LeftRail portfolio={portfolio} currentPage={currentPage} onSettings={() => setCurrentPage('settings')} onTickerClick={handleTickerClick} />
+      <LeftRail portfolio={portfolio} currentPage={currentPage} onSettings={() => setCurrentPage('settings')} onTickerClick={handleTickerClick} onRemoveFromWatchlist={handleRemoveFromWatchlist} />
     </div>
   );
 }
