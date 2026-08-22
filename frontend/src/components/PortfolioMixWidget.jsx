@@ -54,15 +54,15 @@ export default function PortfolioMixWidget({ portfolio, open, onOpenChange, onTi
       </button>
 
       {open && (
-        <div ref={panelRef} className="fixed left-16 top-1/2 -translate-y-1/2 w-72 max-h-[85vh] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700 bg-slate-800/40 shrink-0">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Portfolio Mix</span>
-            <button onClick={() => onOpenChange(false)} className="p-1 -m-1 rounded hover:bg-slate-700/60 transition-colors">
-              <X className="w-3.5 h-3.5 text-slate-500" />
+        <div ref={panelRef} className="fixed left-16 top-1/2 -translate-y-1/2 w-72 max-h-[85vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-100/60 dark:bg-slate-800/40 shrink-0">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Portfolio Mix</span>
+            <button onClick={() => onOpenChange(false)} className="p-1 -m-1 rounded hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors">
+              <X className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
             </button>
           </div>
 
-          <div className="px-3 py-2 border-b border-slate-800 text-[10px] text-slate-500">
+          <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500">
             Tickers &ge; {MIN_PCT}% of portfolio · covering {coveredPct.toFixed(0)}%
           </div>
 
@@ -71,20 +71,20 @@ export default function PortfolioMixWidget({ portfolio, open, onOpenChange, onTi
               <button
                 key={r.ticker}
                 onClick={() => onTickerClick?.(r.ticker)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-800/60 transition-colors text-left"
+                className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors text-left"
               >
                 <span className={`w-2 h-2 rounded-full shrink-0 ${COLORS[i % COLORS.length]}`} />
-                <span className="text-xs font-semibold text-slate-200">{r.ticker}</span>
-                <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden mx-1">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{r.ticker}</span>
+                <div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mx-1">
                   <div className={`h-full rounded-full ${COLORS[i % COLORS.length]}`} style={{ width: `${Math.min(100, r.pct)}%` }} />
                 </div>
                 <span className="text-right shrink-0">
-                  <span className="block text-xs font-bold tabular-nums text-slate-200">{r.pct.toFixed(1)}%</span>
-                  <span className="block text-[10px] tabular-nums opacity-70 text-slate-400">{fmtDollar(r.value)}</span>
+                  <span className="block text-xs font-bold tabular-nums text-slate-700 dark:text-slate-200">{r.pct.toFixed(1)}%</span>
+                  <span className="block text-[10px] tabular-nums opacity-70 text-slate-500 dark:text-slate-400">{fmtDollar(r.value)}</span>
                 </span>
               </button>
             )) : (
-              <p className="text-xs text-slate-600 px-3 py-3">No position holds {MIN_PCT}%+ of the portfolio</p>
+              <p className="text-xs text-slate-400 dark:text-slate-600 px-3 py-3">No position holds {MIN_PCT}%+ of the portfolio</p>
             )}
           </div>
         </div>
