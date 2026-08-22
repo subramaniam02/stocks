@@ -16,7 +16,7 @@ function fmtDollar(n) {
   return `$${abs.toFixed(0)}`;
 }
 
-export default function PortfolioMixWidget({ portfolio, open, onOpenChange }) {
+export default function PortfolioMixWidget({ portfolio, open, onOpenChange, onTickerClick }) {
   const panelRef = useRef(null);
 
   useEffect(() => {
@@ -68,7 +68,11 @@ export default function PortfolioMixWidget({ portfolio, open, onOpenChange }) {
 
           <div className="overflow-y-auto flex-1 min-h-0">
             {rows.length > 0 ? rows.map((r, i) => (
-              <div key={r.ticker} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-800/60 transition-colors">
+              <button
+                key={r.ticker}
+                onClick={() => onTickerClick?.(r.ticker)}
+                className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-800/60 transition-colors text-left"
+              >
                 <span className={`w-2 h-2 rounded-full shrink-0 ${COLORS[i % COLORS.length]}`} />
                 <span className="text-xs font-semibold text-slate-200">{r.ticker}</span>
                 <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden mx-1">
@@ -78,7 +82,7 @@ export default function PortfolioMixWidget({ portfolio, open, onOpenChange }) {
                   <span className="block text-xs font-bold tabular-nums text-slate-200">{r.pct.toFixed(1)}%</span>
                   <span className="block text-[10px] tabular-nums opacity-70 text-slate-400">{fmtDollar(r.value)}</span>
                 </span>
-              </div>
+              </button>
             )) : (
               <p className="text-xs text-slate-600 px-3 py-3">No position holds {MIN_PCT}%+ of the portfolio</p>
             )}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-react';
+import { X, TrendingUp, TrendingDown, Loader2, AlertCircle, Star } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
@@ -192,10 +192,20 @@ function TrendChart({ ticker, intraday }) {
   );
 }
 
-export default function TickerDetailPanel({ ticker, portfolio, onClose }) {
+export default function TickerDetailPanel({ ticker, portfolio, onClose, inWatchlist, onAddToWatchlist }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [addingToWatchlist, setAddingToWatchlist] = useState(false);
+
+  const handleAddToWatchlist = async () => {
+    setAddingToWatchlist(true);
+    try {
+      await onAddToWatchlist?.(ticker);
+    } finally {
+      setAddingToWatchlist(false);
+    }
+  };
 
   useEffect(() => {
     if (!ticker) return;
@@ -233,6 +243,16 @@ export default function TickerDetailPanel({ ticker, portfolio, onClose }) {
                 }`}>
                   {detail.quote_type}
                 </span>
+              )}
+              {!inWatchlist && (
+                <button
+                  onClick={handleAddToWatchlist}
+                  disabled={addingToWatchlist}
+                  className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:hover:bg-amber-950/70 transition-colors disabled:opacity-50"
+                >
+                  <Star className="w-3 h-3" />
+                  {addingToWatchlist ? 'Adding…' : 'Watchlist'}
+                </button>
               )}
             </div>
             {detail?.name && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate">{detail.name}</p>}

@@ -8,10 +8,10 @@ import csv
 import io
 from datetime import date, datetime
 
-from database import engine, get_db, Base
+from database import engine, get_db, Base, SessionLocal
 import models
 import schemas
-from services import portfolio, stock_data, ai_advisor, alert_checker
+from services import portfolio, stock_data, ai_advisor, alert_checker, watchlist
 from services import chat_storage, llm_debug
 from services.scheduler import start_scheduler, stop_scheduler
 
@@ -20,6 +20,11 @@ Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    db = SessionLocal()
+    try:
+        watchlist.backfill_from_holdings_and_realized(db)
+    finally:
+        db.close()
     start_scheduler()
     yield
     stop_scheduler()
@@ -52,7 +57,9 @@ def create_holding(holding: schemas.HoldingCreate, db: Session = Depends(get_db)
     """Create a new holding (lot)."""
     if not stock_data.validate_ticker(holding.ticker):
         raise HTTPException(status_code=400, detail=f"Invalid ticker: {holding.ticker}")
-    return portfolio.create_holding(db, holding)
+    db_holding = portfolio.create_holding(db, holding)
+    watchlist.add_ticker(db, holding.ticker)
+    return db_holding
 
 
 @app.get("/api/holdings", response_model=List[schemas.Holding])
@@ -175,12 +182,35 @@ async def upload_csv(file: UploadFile = File(...), db: Session = Depends(get_db)
     created = []
     if holdings_to_create:
         created = portfolio.create_holdings_bulk(db, holdings_to_create)
+        for h in holdings_to_create:
+            watchlist.add_ticker(db, h.ticker)
 
     return {
         "message": f"Successfully imported {len(created)} holdings",
         "imported": len(created),
         "errors": errors
     }
+
+
+@app.get("/api/watchlist", response_model=List[schemas.WatchlistItem])
+def get_watchlist(db: Session = Depends(get_db)):
+    """All watched tickers. Every current and past holding is added here
+    automatically; other tickers can be added manually from ticker search."""
+    return watchlist.get_all(db)
+
+
+@app.post("/api/watchlist", response_model=schemas.WatchlistItem)
+def add_to_watchlist(item: schemas.WatchlistCreate, db: Session = Depends(get_db)):
+    if not stock_data.validate_ticker(item.ticker):
+        raise HTTPException(status_code=400, detail=f"Invalid ticker: {item.ticker}")
+    return watchlist.add_ticker(db, item.ticker)
+
+
+@app.delete("/api/watchlist/{ticker}")
+def remove_from_watchlist(ticker: str, db: Session = Depends(get_db)):
+    if not watchlist.remove_ticker(db, ticker):
+        raise HTTPException(status_code=404, detail="Ticker not in watchlist")
+    return {"message": f"Removed {ticker.upper()} from watchlist"}
 
 
 @app.get("/api/portfolio", response_model=schemas.PortfolioOverview)
@@ -665,6 +695,7 @@ def create_realized_transaction(txn: schemas.RealizedTransactionCreate, db: Sess
     db.add(db_txn)
     db.commit()
     db.refresh(db_txn)
+    watchlist.add_ticker(db, db_txn.ticker)
     gain_loss = (db_txn.sell_price - db_txn.buy_price) * db_txn.quantity
     days_held = (db_txn.sell_date - db_txn.buy_date).days
     return {

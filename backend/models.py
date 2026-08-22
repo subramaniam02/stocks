@@ -49,6 +49,14 @@ class RealizedTransaction(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class Watchlist(Base):
+    __tablename__ = "watchlist"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ticker = Column(String, nullable=False, unique=True, index=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+
 class Alert(Base):
     __tablename__ = "alerts"
 

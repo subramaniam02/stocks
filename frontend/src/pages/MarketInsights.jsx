@@ -72,14 +72,16 @@ function formatVolume(value) {
   return value.toLocaleString();
 }
 
-function StockCard({ stock, rank, showVolume = false }) {
+function StockCard({ stock, rank, showVolume = false, onTickerClick }) {
   const changePct = stock.change_pct ?? 0;
   const changeDollar = stock.change ?? 0;
   const isPositive = changePct >= 0;
   const price = stock.current_price || stock.end_price || 0;
-  
+
   return (
-    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/60 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+    <button
+      onClick={() => onTickerClick?.(stock.ticker)}
+      className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/60 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-left">
       {rank && (
         <div className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-gray-200 dark:bg-slate-600 text-gray-600 dark:text-slate-300 font-semibold text-xs">
           {rank}
@@ -116,11 +118,11 @@ function StockCard({ stock, rank, showVolume = false }) {
           <div className="text-xs text-gray-400 dark:text-slate-500">Vol: {formatVolume(stock.volume)}</div>
         )}
       </div>
-    </div>
+    </button>
   );
 }
 
-function StockList({ stocks, loading, emptyMessage, showVolume = false }) {
+function StockList({ stocks, loading, emptyMessage, showVolume = false, onTickerClick }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -138,13 +140,13 @@ function StockList({ stocks, loading, emptyMessage, showVolume = false }) {
   return (
     <div className="space-y-2">
       {stocks.map((stock, idx) => (
-        <StockCard key={stock.ticker} stock={stock} rank={idx + 1} showVolume={showVolume} />
+        <StockCard key={stock.ticker} stock={stock} rank={idx + 1} showVolume={showVolume} onTickerClick={onTickerClick} />
       ))}
     </div>
   );
 }
 
-function InsightsSection({ title, icon: Icon, gainers, losers, mostActive, loading, emptyMessage }) {
+function InsightsSection({ title, icon: Icon, gainers, losers, mostActive, loading, emptyMessage, onTickerClick }) {
   if (loading) {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
@@ -187,7 +189,7 @@ function InsightsSection({ title, icon: Icon, gainers, losers, mostActive, loadi
               <TrendingUp className="w-4 h-4" />
               Top Gainers
             </h4>
-            <StockList stocks={gainers} emptyMessage="No gainers" />
+            <StockList stocks={gainers} emptyMessage="No gainers" onTickerClick={onTickerClick} />
           </div>
         )}
 
@@ -197,7 +199,7 @@ function InsightsSection({ title, icon: Icon, gainers, losers, mostActive, loadi
               <TrendingDown className="w-4 h-4" />
               Top Losers
             </h4>
-            <StockList stocks={losers} emptyMessage="No losers" />
+            <StockList stocks={losers} emptyMessage="No losers" onTickerClick={onTickerClick} />
           </div>
         )}
 
@@ -207,7 +209,7 @@ function InsightsSection({ title, icon: Icon, gainers, losers, mostActive, loadi
               <Activity className="w-4 h-4" />
               Most Active
             </h4>
-            <StockList stocks={mostActive} emptyMessage="No data" showVolume={true} />
+            <StockList stocks={mostActive} emptyMessage="No data" showVolume={true} onTickerClick={onTickerClick} />
           </div>
         )}
       </div>
@@ -215,7 +217,7 @@ function InsightsSection({ title, icon: Icon, gainers, losers, mostActive, loadi
   );
 }
 
-function ScreenerView({ screenerType, onBack }) {
+function ScreenerView({ screenerType, onBack, onTickerClick }) {
   const [data, setData] = useState(() => getCached(_screenerCache, screenerType));
   const [loading, setLoading] = useState(!getCached(_screenerCache, screenerType));
 
@@ -274,12 +276,13 @@ function ScreenerView({ screenerType, onBack }) {
         loading={loading}
         emptyMessage="No stocks found"
         showVolume={screenerType === 'most_actives'}
+        onTickerClick={onTickerClick}
       />
     </div>
   );
 }
 
-export default function MarketInsights({ onBack }) {
+export default function MarketInsights({ onBack, onTickerClick }) {
   const [days, setDays] = useState(1);
   const [view, setView] = useState('overview');
   const [selectedScreener, setSelectedScreener] = useState(null);
@@ -403,16 +406,15 @@ export default function MarketInsights({ onBack }) {
             )}
 
             <div className="space-y-6">
-              {portfolioData && (
-                <InsightsSection
-                  title="Your Portfolio Performance"
-                  icon={Briefcase}
-                  gainers={portfolioData.gainers}
-                  losers={portfolioData.losers}
-                  loading={loadingPortfolio}
-                  emptyMessage="Add stocks to your portfolio to see performance insights."
-                />
-              )}
+              <InsightsSection
+                title="Your Portfolio Performance"
+                icon={Briefcase}
+                gainers={portfolioData?.gainers}
+                losers={portfolioData?.losers}
+                loading={loadingPortfolio}
+                emptyMessage="Add stocks to your portfolio to see performance insights."
+                onTickerClick={onTickerClick}
+              />
 
               <InsightsSection
                 title={days === 1 ? "Market Movers (Today)" : `Market Performance (${days} Days)`}
@@ -422,6 +424,7 @@ export default function MarketInsights({ onBack }) {
                 mostActive={days === 1 ? marketData?.most_active : null}
                 loading={loadingMarket}
                 emptyMessage="Unable to load market data."
+                onTickerClick={onTickerClick}
               />
             </div>
 
@@ -439,9 +442,10 @@ export default function MarketInsights({ onBack }) {
         )}
 
         {view === 'screener' && selectedScreener && (
-          <ScreenerView 
-            screenerType={selectedScreener} 
-            onBack={() => setView('overview')} 
+          <ScreenerView
+            screenerType={selectedScreener}
+            onBack={() => setView('overview')}
+            onTickerClick={onTickerClick}
           />
         )}
       </main>

@@ -7,7 +7,6 @@ import {
 import { Settings, RefreshCw } from 'lucide-react';
 import { VIS_STYLES, getTodayStyle, getOverallStyle } from '../utils/moversSettings';
 import HoldingsTable from '../components/HoldingsTable';
-import TickerLotsModal from '../components/TickerLotsModal';
 import { api } from '../services/api';
 import { PERIODS, periodLabel, getCachedOverallPerf, setCachedOverallPerf } from '../utils/overallPerformance';
 
@@ -298,12 +297,17 @@ const LEGEND = [
 function PeriodPerformanceRow({ d, onTickerClick, sortKey }) {
   const pos = (d.changePct ?? 0) >= 0;
   const color = pos ? 'text-emerald-400' : 'text-red-400';
+  const perSharePos = (d.priceChange ?? 0) >= 0;
+  const perShareColor = perSharePos ? 'text-emerald-400' : 'text-red-400';
   return (
     <button
       onClick={() => onTickerClick?.(d.name)}
       className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-800/60 transition-colors text-left"
     >
       <span className="flex-1 min-w-0 text-xs font-semibold text-slate-200 truncate">{d.name}</span>
+      <span className={`w-14 text-right text-xs tabular-nums shrink-0 ${sortKey === 'priceChange' ? 'font-bold' : ''} ${perShareColor}`}>
+        {d.priceChange != null ? fmtPrice(d.priceChange) : '—'}
+      </span>
       <span className={`w-16 text-right text-xs tabular-nums shrink-0 ${sortKey === 'changeDollar' ? 'font-bold' : ''} ${color}`}>
         {fmtDollar(d.changeDollar ?? 0)}
       </span>
@@ -353,6 +357,7 @@ function PeriodPerformancePanel({ stocks, totalDollar, totalPct, periodText, onT
       </div>
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-800 text-[10px] font-semibold text-slate-500 uppercase tracking-wider shrink-0">
         <button onClick={() => handleSort('name')} className="flex-1 text-left hover:text-slate-300 transition-colors">Ticker</button>
+        <button onClick={() => handleSort('priceChange')} className="w-14 text-right hover:text-slate-300 transition-colors">$/sh</button>
         <button onClick={() => handleSort('changeDollar')} className="w-16 text-right hover:text-slate-300 transition-colors">$</button>
         <button onClick={() => handleSort('changePct')} className="w-14 text-right hover:text-slate-300 transition-colors">%</button>
       </div>
@@ -371,8 +376,6 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
   const [overallStyle] = useState(getOverallStyle);
   const [todayRowRef, todayRowSize] = useElementSize();
   const [overallRowRef, overallRowSize] = useElementSize();
-  const [expandedTicker, setExpandedTicker] = useState(null);
-  const expandedStockPos = expandedTicker ? portfolio?.stocks?.find(s => s.ticker === expandedTicker) : null;
 
   const [overallPerf, setOverallPerf] = useState(() => getCachedOverallPerf(period));
   const [loadingOverallPerf, setLoadingOverallPerf] = useState(false);
@@ -651,7 +654,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
               )}
             </div>
           </div>
-          <PeriodPerformancePanel stocks={barData} totalDollar={todayTotalDollar} totalPct={todayTotalPct} periodText="1D" onTickerClick={setExpandedTicker} />
+          <PeriodPerformancePanel stocks={barData} totalDollar={todayTotalDollar} totalPct={todayTotalPct} periodText="1D" onTickerClick={onTickerClick} />
         </div>
       )}
 
@@ -702,7 +705,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
               </ScatterChart>
             </ResponsiveContainer>
           </div>
-          <PeriodPerformancePanel stocks={barData} totalDollar={todayTotalDollar} totalPct={todayTotalPct} periodText="1D" onTickerClick={setExpandedTicker} />
+          <PeriodPerformancePanel stocks={barData} totalDollar={todayTotalDollar} totalPct={todayTotalPct} periodText="1D" onTickerClick={onTickerClick} />
         </div>
       )}
 
@@ -764,7 +767,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
             totalDollar={overallPerf.total_gain_loss}
             totalPct={overallPerf.total_gain_loss_pct}
             periodText={periodLabel(period)}
-            onTickerClick={setExpandedTicker}
+            onTickerClick={onTickerClick}
           />
         </div>
       )}
@@ -820,7 +823,7 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
             totalDollar={overallPerf.total_gain_loss}
             totalPct={overallPerf.total_gain_loss_pct}
             periodText={periodLabel(period)}
-            onTickerClick={setExpandedTicker}
+            onTickerClick={onTickerClick}
           />
         </div>
       )}
@@ -831,7 +834,6 @@ export default function MoversPage({ portfolio, onTickerClick, onOpenSettings, o
         </div>
       )}
 
-      <TickerLotsModal stockPos={expandedStockPos} onClose={() => setExpandedTicker(null)} />
     </div>
   );
 }

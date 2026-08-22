@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Trophy, TrendingUp, TrendingDown, ChevronDown, ChevronUp, RefreshCw, X } from 'lucide-react';
 import { api } from '../services/api';
-import TickerLotsModal from './TickerLotsModal';
 import { getCachedOverallPerf, setCachedOverallPerf } from '../utils/overallPerformance';
 
 // Static: always all-time profit/loss, independent of whatever period the Trends
@@ -20,13 +19,13 @@ function fmtMoverDollar(n) {
   return `${sign}$${abs.toFixed(0)}`;
 }
 
-function MoverRow({ d, expanded, onToggle }) {
+function MoverRow({ d, onClick }) {
   const pos = (d.changePct ?? 0) >= 0;
   const color = pos ? 'text-emerald-400' : 'text-red-400';
   return (
     <button
-      onClick={onToggle}
-      className={`w-full flex items-center gap-2 px-3 py-1.5 transition-colors text-left ${expanded ? 'bg-slate-700/60' : 'hover:bg-slate-800/60'}`}
+      onClick={onClick}
+      className="w-full flex items-center gap-2 px-3 py-1.5 transition-colors text-left hover:bg-slate-800/60"
     >
       <span className="text-xs font-semibold text-slate-200 truncate">{d.name}</span>
       <span className="ml-auto text-right shrink-0">
@@ -54,13 +53,13 @@ function SectionHeader({ icon, label, open, onToggle }) {
   );
 }
 
-function LotMoverRow({ lot, expanded, onToggle }) {
+function LotMoverRow({ lot, onClick }) {
   const pos = lot.gain_loss >= 0;
   const color = pos ? 'text-emerald-400' : 'text-red-400';
   return (
     <button
-      onClick={onToggle}
-      className={`w-full flex items-center gap-2 px-3 py-1.5 transition-colors text-left ${expanded ? 'bg-slate-700/60' : 'hover:bg-slate-800/60'}`}
+      onClick={onClick}
+      className="w-full flex items-center gap-2 px-3 py-1.5 transition-colors text-left hover:bg-slate-800/60"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -79,10 +78,9 @@ function LotMoverRow({ lot, expanded, onToggle }) {
   );
 }
 
-export default function TopMoversWidget({ portfolio, open, onOpenChange }) {
+export default function TopMoversWidget({ portfolio, open, onOpenChange, onTickerClick }) {
   const [perf, setPerf] = useState(() => getCachedOverallPerf(WIDGET_PERIOD));
   const [loading, setLoading] = useState(false);
-  const [expandedTicker, setExpandedTicker] = useState(null);
   const [openSections, setOpenSections] = useState({ losses: true, gains: true, lowestGains: false });
   const toggleSection = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
   const panelRef = useRef(null);
@@ -90,16 +88,11 @@ export default function TopMoversWidget({ portfolio, open, onOpenChange }) {
   useEffect(() => {
     if (!open) return;
     function handleClick(e) {
-      // The lot modal is a full-screen overlay rendered outside panelRef — while
-      // it's open it already owns click-outside/close behavior itself, so this
-      // listener must not also treat that click as "outside the movers panel"
-      // and collapse it too.
-      if (expandedTicker) return;
       if (panelRef.current && !panelRef.current.contains(e.target)) onOpenChange(false);
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [open, onOpenChange, expandedTicker]);
+  }, [open, onOpenChange]);
 
   const load = async (force = false) => {
     if (!force) {
@@ -150,9 +143,6 @@ export default function TopMoversWidget({ portfolio, open, onOpenChange }) {
     return lots.sort((a, b) => a.gain_loss_pct - b.gain_loss_pct).slice(0, 10);
   }, [portfolio]);
 
-  const stockPos = expandedTicker ? portfolio?.stocks?.find(s => s.ticker === expandedTicker) : null;
-  const toggleTicker = (ticker) => setExpandedTicker(t => (t === ticker ? null : ticker));
-
   if (!portfolio?.stocks?.length) return null;
 
   return (
@@ -190,7 +180,7 @@ export default function TopMoversWidget({ portfolio, open, onOpenChange }) {
           />
           {openSections.losses && (
             losers.length > 0
-              ? losers.map(d => <MoverRow key={d.name} d={d} expanded={expandedTicker === d.name} onToggle={() => toggleTicker(d.name)} />)
+              ? losers.map(d => <MoverRow key={d.name} d={d} onClick={() => onTickerClick?.(d.name)} />)
               : <p className="text-xs text-slate-600 px-3 py-3">{loading ? 'Loading…' : 'No losses'}</p>
           )}
 
@@ -202,7 +192,7 @@ export default function TopMoversWidget({ portfolio, open, onOpenChange }) {
           />
           {openSections.gains && (
             gainers.length > 0
-              ? gainers.map(d => <MoverRow key={d.name} d={d} expanded={expandedTicker === d.name} onToggle={() => toggleTicker(d.name)} />)
+              ? gainers.map(d => <MoverRow key={d.name} d={d} onClick={() => onTickerClick?.(d.name)} />)
               : <p className="text-xs text-slate-600 px-3 py-3">{loading ? 'Loading…' : 'No gainers'}</p>
           )}
 
@@ -215,15 +205,13 @@ export default function TopMoversWidget({ portfolio, open, onOpenChange }) {
           {openSections.lowestGains && (
             lowestGains.length > 0
               ? lowestGains.map(lot => (
-                  <LotMoverRow key={lot.id} lot={lot} expanded={expandedTicker === lot.ticker} onToggle={() => toggleTicker(lot.ticker)} />
+                  <LotMoverRow key={lot.id} lot={lot} onClick={() => onTickerClick?.(lot.ticker)} />
                 ))
               : <p className="text-xs text-slate-600 px-3 py-3">No gaining lots</p>
           )}
         </div>
       </div>
       )}
-
-      <TickerLotsModal stockPos={stockPos} portfolioTotal={portfolio?.total_value} onClose={() => setExpandedTicker(null)} />
     </div>
   );
 }

@@ -159,7 +159,7 @@ function TickerSearch({ onSearch }) {
   );
 }
 
-function LeftRail({ portfolio, currentPage, onSettings }) {
+function LeftRail({ portfolio, currentPage, onSettings, onTickerClick }) {
   // 'movers' | 'mix' | 'wealth' | 'ai' | null — mutually exclusive, closed by default.
   const [openPanel, setOpenPanel] = useState(null);
 
@@ -173,12 +173,14 @@ function LeftRail({ portfolio, currentPage, onSettings }) {
           portfolio={portfolio}
           open={openPanel === 'movers'}
           onOpenChange={(v) => setOpenPanel(v ? 'movers' : null)}
+          onTickerClick={onTickerClick}
         />
         <div className="w-6 h-px bg-slate-800 my-1" />
         <PortfolioMixWidget
           portfolio={portfolio}
           open={openPanel === 'mix'}
           onOpenChange={(v) => setOpenPanel(v ? 'mix' : null)}
+          onTickerClick={onTickerClick}
         />
         <div className="w-6 h-px bg-slate-800 my-1" />
         <NetWealthWidget
@@ -219,6 +221,7 @@ export default function App() {
   const [alerts, setAlerts] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [trendsPeriod, setTrendsPeriod] = useState('1d');
+  const [watchlist, setWatchlist] = useState([]);
 
   const AUTO_REFRESH_MS = 15 * 60 * 1000;
   const lastRefreshedRef = useRef(null);
@@ -257,6 +260,20 @@ export default function App() {
     setUnreadCount(0);
   };
 
+  const loadWatchlist = useCallback(async () => {
+    try {
+      const data = await api.getWatchlist();
+      setWatchlist(data.map(w => w.ticker));
+    } catch {
+      // non-critical
+    }
+  }, []);
+
+  const handleAddToWatchlist = useCallback(async (ticker) => {
+    await api.addToWatchlist(ticker);
+    setWatchlist(prev => prev.includes(ticker) ? prev : [...prev, ticker]);
+  }, []);
+
   const loadPortfolio = useCallback(async () => {
     try {
       const portfolioData = await api.getPortfolio();
@@ -277,6 +294,7 @@ export default function App() {
     loadPortfolio();
     loadRealized();
     loadAlerts();
+    loadWatchlist();
     startMarketInsightsAutoRefresh();
     const interval = setInterval(() => {
       if (isMarketOpen()) {
@@ -285,7 +303,7 @@ export default function App() {
       }
     }, AUTO_REFRESH_MS);
     return () => clearInterval(interval);
-  }, [loadPortfolio, loadRealized, loadAlerts]);
+  }, [loadPortfolio, loadRealized, loadAlerts, loadWatchlist]);
 
   // Refresh on tab visibility or window focus (market hours only, 1-min cooldown)
   useEffect(() => {
@@ -446,7 +464,7 @@ export default function App() {
           </main>
         )}
         {currentPage === 'insights' && (
-          <MarketInsights />
+          <MarketInsights onTickerClick={handleTickerClick} />
         )}
         {currentPage === 'realized' && (
           <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
@@ -488,10 +506,12 @@ export default function App() {
           ticker={selectedTicker}
           portfolio={portfolio}
           onClose={() => setSelectedTicker(null)}
+          inWatchlist={watchlist.includes(selectedTicker.toUpperCase())}
+          onAddToWatchlist={handleAddToWatchlist}
         />
       )}
 
-      <LeftRail portfolio={portfolio} currentPage={currentPage} onSettings={() => setCurrentPage('settings')} />
+      <LeftRail portfolio={portfolio} currentPage={currentPage} onSettings={() => setCurrentPage('settings')} onTickerClick={handleTickerClick} />
     </div>
   );
 }

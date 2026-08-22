@@ -154,6 +154,19 @@ class SellLotsRequest(BaseModel):
     notes: Optional[str] = None
 
 
+class WatchlistCreate(BaseModel):
+    ticker: str
+
+
+class WatchlistItem(BaseModel):
+    id: int
+    ticker: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class AlertOut(BaseModel):
     id: int
     alert_type: str

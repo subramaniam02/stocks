@@ -268,4 +268,23 @@ export const api = {
     });
     return handleResponse(response);
   },
+
+  async getWatchlist() {
+    const response = await fetch(`${API_BASE}/watchlist`);
+    return handleResponse(response);
+  },
+
+  async addToWatchlist(ticker) {
+    const response = await fetch(`${API_BASE}/watchlist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticker }),
+    });
+    return handleResponse(response);
+  },
+
+  async removeFromWatchlist(ticker) {
+    const response = await fetch(`${API_BASE}/watchlist/${ticker}`, { method: 'DELETE' });
+    return handleResponse(response);
+  },
 };
