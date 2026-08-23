@@ -3,9 +3,9 @@ import { FileText, RefreshCw, X } from 'lucide-react';
 import { api } from '../services/api';
 
 const PERIODS = [
-  { key: 'today', label: 'Today' },
-  { key: 'weekly', label: 'This Week' },
-  { key: 'monthly', label: 'This Month' },
+  { key: 'today', label: 'Today', prose: 'Today' },
+  { key: 'weekly', label: 'This Week', prose: 'This week' },
+  { key: 'monthly', label: 'This Month', prose: 'This month' },
 ];
 
 function fmtDollar(n) {
@@ -79,45 +79,134 @@ function buildTodayStats(portfolio) {
   };
 }
 
-export default function PortfolioTextSummary({ portfolio, onTickerClick }) {
-  const [period, setPeriod] = useState('today');
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+function statsFromApi(data) {
+  return {
+    totalPct: data.total_pct,
+    gainedDollar: data.gained_dollar,
+    lostDollar: data.lost_dollar,
+    gainers: data.gainers,
+    losers: data.losers,
+    gainersCount: data.gainers_count,
+    losersCount: data.losers_count,
+    unchangedCount: data.unchanged_count,
+    noDataCount: 0,
+    totalCount: data.total_count,
+  };
+}
+
+function PeriodSection({ period, stats, error, atHigh, atLow, onTickerClick }) {
   const [expanded, setExpanded] = useState(null); // 'gainers' | 'losers' | null
 
-  const load = useCallback(async (p) => {
-    if (p === 'today') {
-      setStats(portfolio ? buildTodayStats(portfolio) : null);
-      setError(null);
-      return;
-    }
+  if (error || !stats) {
+    return (
+      <div>
+        <h3 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{period.label}</h3>
+        <p className="text-sm text-slate-400 dark:text-slate-500">No data available yet.</p>
+      </div>
+    );
+  }
+
+  const netDollar = stats.gainedDollar + stats.lostDollar;
+  const netPos = netDollar >= 0;
+
+  return (
+    <div>
+      <h3 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{period.label}</h3>
+      <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+        {period.prose} your portfolio{' '}
+        <span className="font-semibold text-emerald-600 dark:text-emerald-400">gained +${fmtDollar(stats.gainedDollar)}</span>
+        {' '}and{' '}
+        <span className="font-semibold text-red-500 dark:text-red-400">lost -${fmtDollar(stats.lostDollar)}</span>
+        {', for a net of '}
+        <span className={`font-semibold ${netPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+          {netPos ? '+' : '-'}${fmtDollar(netDollar)}
+          {stats.totalPct != null && <> ({stats.totalPct >= 0 ? '+' : ''}{stats.totalPct.toFixed(2)}%)</>}
+        </span>
+        {'. Of '}{stats.totalCount} ticker{stats.totalCount === 1 ? '' : 's'},{' '}
+        <button
+          onClick={() => setExpanded(e => e === 'gainers' ? null : 'gainers')}
+          disabled={stats.gainersCount === 0}
+          className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline disabled:no-underline disabled:cursor-default"
+        >
+          {stats.gainersCount} gained
+        </button>
+        {' and '}
+        <button
+          onClick={() => setExpanded(e => e === 'losers' ? null : 'losers')}
+          disabled={stats.losersCount === 0}
+          className="font-semibold text-red-500 dark:text-red-400 hover:underline disabled:no-underline disabled:cursor-default"
+        >
+          {stats.losersCount} dropped
+        </button>
+        {stats.unchangedCount > 0 && <>, {stats.unchangedCount} unchanged</>}
+        {stats.noDataCount > 0 && <>, {stats.noDataCount} without today's data</>}
+        {'. '}
+        {period.key === 'today' && (
+          <>
+            {atHigh.length > 0 && (
+              <>
+                <TickerChips tickers={atHigh} colorClass="text-emerald-600 dark:text-emerald-400" onTickerClick={onTickerClick} />
+                {atHigh.length === 1 ? ' is' : ' are'} near a 52-week high.{' '}
+              </>
+            )}
+            {atLow.length > 0 && (
+              <>
+                <TickerChips tickers={atLow} colorClass="text-red-500 dark:text-red-400" onTickerClick={onTickerClick} />
+                {atLow.length === 1 ? ' is' : ' are'} near a 52-week low.{' '}
+              </>
+            )}
+            {atHigh.length === 0 && atLow.length === 0 && 'No tickers are currently near a 52-week high or low.'}
+          </>
+        )}
+      </p>
+
+      {expanded === 'gainers' && (
+        <TickerListPanel
+          title="Gainers"
+          tickers={stats.gainers}
+          colorClass="text-emerald-600 dark:text-emerald-400"
+          onTickerClick={onTickerClick}
+          onClose={() => setExpanded(null)}
+        />
+      )}
+      {expanded === 'losers' && (
+        <TickerListPanel
+          title="Losers"
+          tickers={stats.losers}
+          colorClass="text-red-500 dark:text-red-400"
+          onTickerClick={onTickerClick}
+          onClose={() => setExpanded(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function PortfolioTextSummary({ portfolio, onTickerClick }) {
+  const [statsByPeriod, setStatsByPeriod] = useState({});
+  const [errorsByPeriod, setErrorsByPeriod] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
-    try {
-      const data = await api.getAlertSummary(p);
-      setStats({
-        totalPct: data.total_pct,
-        gainedDollar: data.gained_dollar,
-        lostDollar: data.lost_dollar,
-        gainers: data.gainers,
-        losers: data.losers,
-        gainersCount: data.gainers_count,
-        losersCount: data.losers_count,
-        unchangedCount: data.unchanged_count,
-        noDataCount: 0,
-        totalCount: data.total_count,
-      });
-    } catch (e) {
-      setStats(null);
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+    const results = { today: portfolio ? buildTodayStats(portfolio) : null };
+    const errors = {};
+
+    await Promise.all(['weekly', 'monthly'].map(async (p) => {
+      try {
+        results[p] = statsFromApi(await api.getAlertSummary(p));
+      } catch (e) {
+        errors[p] = e.message;
+      }
+    }));
+
+    setStatsByPeriod(results);
+    setErrorsByPeriod(errors);
+    setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolio]);
 
-  useEffect(() => { load(period); setExpanded(null); }, [period, load]);
+  useEffect(() => { load(); }, [load]);
 
   if (!portfolio?.stocks?.length) return null;
 
@@ -127,103 +216,40 @@ export default function PortfolioTextSummary({ portfolio, onTickerClick }) {
     if (s.week_52_low != null && s.current_price <= s.week_52_low * 1.01) atLow.push(s.ticker);
   }
 
-  const netDollar = stats ? stats.gainedDollar + stats.lostDollar : 0;
-  const netPos = netDollar >= 0;
-  const periodLabel = period === 'today' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
-
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-slate-400 dark:text-slate-500" />
           <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">At a Glance</h2>
         </div>
-        <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900/60 rounded-md p-0.5">
-          {PERIODS.map(p => (
-            <button
-              key={p.key}
-              onClick={() => setPeriod(p.key)}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded transition-colors ${
-                period === p.key ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-40"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-6">
           <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />
         </div>
-      ) : error || !stats ? (
-        <p className="text-sm text-slate-400 dark:text-slate-500 py-2">No data available for {periodLabel} yet.</p>
       ) : (
-        <>
-        <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          {period === 'today' ? 'Today' : period === 'weekly' ? 'This week' : 'This month'} your portfolio{' '}
-          <span className="font-semibold text-emerald-600 dark:text-emerald-400">gained +${fmtDollar(stats.gainedDollar)}</span>
-          {' '}and{' '}
-          <span className="font-semibold text-red-500 dark:text-red-400">lost -${fmtDollar(stats.lostDollar)}</span>
-          {', for a net of '}
-          <span className={`font-semibold ${netPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
-            {netPos ? '+' : '-'}${fmtDollar(netDollar)}
-            {stats.totalPct != null && <> ({stats.totalPct >= 0 ? '+' : ''}{stats.totalPct.toFixed(2)}%)</>}
-          </span>
-          {'. Of '}{stats.totalCount} ticker{stats.totalCount === 1 ? '' : 's'},{' '}
-          <button
-            onClick={() => setExpanded(e => e === 'gainers' ? null : 'gainers')}
-            disabled={stats.gainersCount === 0}
-            className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline disabled:no-underline disabled:cursor-default"
-          >
-            {stats.gainersCount} gained
-          </button>
-          {' and '}
-          <button
-            onClick={() => setExpanded(e => e === 'losers' ? null : 'losers')}
-            disabled={stats.losersCount === 0}
-            className="font-semibold text-red-500 dark:text-red-400 hover:underline disabled:no-underline disabled:cursor-default"
-          >
-            {stats.losersCount} dropped
-          </button>
-          {stats.unchangedCount > 0 && <>, {stats.unchangedCount} unchanged</>}
-          {stats.noDataCount > 0 && <>, {stats.noDataCount} without today's data</>}
-          {'. '}
-          {atHigh.length > 0 && (
-            <>
-              <TickerChips tickers={atHigh} colorClass="text-emerald-600 dark:text-emerald-400" onTickerClick={onTickerClick} />
-              {atHigh.length === 1 ? ' is' : ' are'} near a 52-week high.{' '}
-            </>
-          )}
-          {atLow.length > 0 && (
-            <>
-              <TickerChips tickers={atLow} colorClass="text-red-500 dark:text-red-400" onTickerClick={onTickerClick} />
-              {atLow.length === 1 ? ' is' : ' are'} near a 52-week low.{' '}
-            </>
-          )}
-          {atHigh.length === 0 && atLow.length === 0 && 'No tickers are currently near a 52-week high or low.'}
-        </p>
-
-        {expanded === 'gainers' && (
-          <TickerListPanel
-            title="Gainers"
-            tickers={stats.gainers}
-            colorClass="text-emerald-600 dark:text-emerald-400"
-            onTickerClick={onTickerClick}
-            onClose={() => setExpanded(null)}
-          />
-        )}
-        {expanded === 'losers' && (
-          <TickerListPanel
-            title="Losers"
-            tickers={stats.losers}
-            colorClass="text-red-500 dark:text-red-400"
-            onTickerClick={onTickerClick}
-            onClose={() => setExpanded(null)}
-          />
-        )}
-        </>
+        <div className="space-y-4 divide-y divide-slate-100 dark:divide-slate-700 [&>*:not(:first-child)]:pt-4">
+          {PERIODS.map(p => (
+            <PeriodSection
+              key={p.key}
+              period={p}
+              stats={statsByPeriod[p.key]}
+              error={errorsByPeriod[p.key]}
+              atHigh={atHigh}
+              atLow={atLow}
+              onTickerClick={onTickerClick}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
