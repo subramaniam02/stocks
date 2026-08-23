@@ -248,9 +248,10 @@ def track_lot_gains(db: Session) -> int:
 
 
 def get_period_summary(db: Session, period: str) -> Optional[dict]:
-    """Total $/% change plus the single best- and worst-performing ticker
-    over 'daily' | 'weekly' | 'monthly'. Shared by the scheduled summary
-    alert and the live Alerts-page preview, so both stay in sync."""
+    """Total $/% change, gained-vs-lost $ and ticker counts, plus the single
+    best- and worst-performing ticker over 'daily' | 'weekly' | 'monthly'.
+    Shared by the scheduled summary alert, the live Alerts-page preview, and
+    the Performance-page text summary, so all three stay in sync."""
     period_key = SUMMARY_PERIODS.get(period)
     if period_key is None:
         return None
@@ -265,7 +266,11 @@ def get_period_summary(db: Session, period: str) -> Optional[dict]:
             return None
         total_pct = _compute_today_pct(port)
         ranked = [
-            {"ticker": s.ticker, "gain_loss_pct": s.return_1d}
+            {
+                "ticker": s.ticker,
+                "gain_loss_pct": s.return_1d,
+                "gain_loss": s.current_price * s.return_1d / (100 + s.return_1d) * s.total_quantity,
+            }
             for s in port.stocks if s.return_1d is not None and not s.price_stale
         ]
     else:
@@ -279,17 +284,30 @@ def get_period_summary(db: Session, period: str) -> Optional[dict]:
             return None
         total_pct = perf.get("total_gain_loss_pct")
         ranked = [
-            {"ticker": s["ticker"], "gain_loss_pct": s["gain_loss_pct"]}
+            {"ticker": s["ticker"], "gain_loss_pct": s["gain_loss_pct"], "gain_loss": s["gain_loss"]}
             for s in stocks if not s.get("price_stale")
         ]
 
     if not ranked:
         return None
+
+    gained_dollar = sum(r["gain_loss"] for r in ranked if r["gain_loss"] > 0)
+    lost_dollar = sum(r["gain_loss"] for r in ranked if r["gain_loss"] < 0)
+    gainers_count = sum(1 for r in ranked if r["gain_loss_pct"] > 0)
+    losers_count = sum(1 for r in ranked if r["gain_loss_pct"] < 0)
+    unchanged_count = len(ranked) - gainers_count - losers_count
+
     ranked.sort(key=lambda r: r["gain_loss_pct"], reverse=True)
     best, worst = ranked[0], ranked[-1]
     return {
         "period": period,
         "total_pct": round(total_pct, 2) if total_pct is not None else None,
+        "gained_dollar": round(gained_dollar, 2),
+        "lost_dollar": round(lost_dollar, 2),
+        "gainers_count": gainers_count,
+        "losers_count": losers_count,
+        "unchanged_count": unchanged_count,
+        "total_count": len(ranked),
         "best": {"ticker": best["ticker"], "gain_loss_pct": round(best["gain_loss_pct"], 2)},
         "worst": {"ticker": worst["ticker"], "gain_loss_pct": round(worst["gain_loss_pct"], 2)},
     }
@@ -309,7 +327,8 @@ def run_summary_alert(db: Session, period: str) -> int:
     total_pct, best, worst = summary["total_pct"], summary["best"], summary["worst"]
     total_str = f"{total_pct:+.2f}%" if total_pct is not None else "n/a"
     msg = (
-        f"Portfolio {total_str}. "
+        f"Portfolio {total_str} (+${summary['gained_dollar']:.0f} / -${abs(summary['lost_dollar']):.0f}). "
+        f"{summary['gainers_count']} up, {summary['losers_count']} down. "
         f"Best: {best['ticker']} {best['gain_loss_pct']:+.1f}%. "
         f"Worst: {worst['ticker']} {worst['gain_loss_pct']:+.1f}%."
     )

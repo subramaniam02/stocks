@@ -187,6 +187,17 @@ function PortfolioSummary({ onTickerClick }) {
       ) : error ? (
         <p className="text-xs text-slate-400 dark:text-slate-500 py-4 text-center">No {period} data available yet</p>
       ) : (
+        <>
+        {summary?.gained_dollar != null && (
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">+${summary.gained_dollar.toFixed(0)}</span>
+            {' / '}
+            <span className="font-semibold text-red-500 dark:text-red-400">-${Math.abs(summary.lost_dollar).toFixed(0)}</span>
+            {' · '}{summary.gainers_count} up, {summary.losers_count} down
+            {summary.unchanged_count > 0 && <>, {summary.unchanged_count} flat</>}
+            {' (of '}{summary.total_count}{')'}
+          </p>
+        )}
         <div className="flex gap-3">
           <PerformerCard
             label="Best"
@@ -201,6 +212,7 @@ function PortfolioSummary({ onTickerClick }) {
             onTickerClick={onTickerClick}
           />
         </div>
+        </>
       )}
     </div>
   );
