@@ -23,6 +23,19 @@ DEFAULT_SETTINGS = {
     "portfolio_drop_enabled": True,
     "must_act_enabled": True,
     "market_close_review_enabled": True,
+    "daily_summary_enabled": True,
+    "weekly_summary_enabled": True,
+    "monthly_summary_enabled": True,
+}
+
+# "daily" uses each stock's live return_1d (already computed off the bulk
+# price cache); "weekly"/"monthly" reuse get_overall_performance's rolling
+# period_start logic, which already tracks each lot from its own purchase
+# date rather than assuming a fixed portfolio composition.
+SUMMARY_PERIODS = {
+    "daily": "1d",
+    "weekly": "7d",
+    "monthly": "1m",
 }
 
 
@@ -232,6 +245,77 @@ def track_lot_gains(db: Session) -> int:
         print(f"Lot tracker: {newly_crossed} lot(s) newly crossed below +{LOT_PROFIT_THRESHOLD:.0f}% "
               f"(queued for next review)")
     return newly_crossed
+
+
+def get_period_summary(db: Session, period: str) -> Optional[dict]:
+    """Total $/% change plus the single best- and worst-performing ticker
+    over 'daily' | 'weekly' | 'monthly'. Shared by the scheduled summary
+    alert and the live Alerts-page preview, so both stay in sync."""
+    period_key = SUMMARY_PERIODS.get(period)
+    if period_key is None:
+        return None
+
+    if period_key == "1d":
+        try:
+            port = portfolio_svc.get_portfolio_with_performance(db)
+        except Exception as e:
+            print(f"{period} summary: failed to load portfolio: {e}")
+            return None
+        if not port.stocks:
+            return None
+        total_pct = _compute_today_pct(port)
+        ranked = [
+            {"ticker": s.ticker, "gain_loss_pct": s.return_1d}
+            for s in port.stocks if s.return_1d is not None and not s.price_stale
+        ]
+    else:
+        try:
+            perf = portfolio_svc.get_overall_performance(db, period_key)
+        except Exception as e:
+            print(f"{period} summary: failed to load overall performance: {e}")
+            return None
+        stocks = perf.get("stocks") or []
+        if not stocks:
+            return None
+        total_pct = perf.get("total_gain_loss_pct")
+        ranked = [
+            {"ticker": s["ticker"], "gain_loss_pct": s["gain_loss_pct"]}
+            for s in stocks if not s.get("price_stale")
+        ]
+
+    if not ranked:
+        return None
+    ranked.sort(key=lambda r: r["gain_loss_pct"], reverse=True)
+    best, worst = ranked[0], ranked[-1]
+    return {
+        "period": period,
+        "total_pct": round(total_pct, 2) if total_pct is not None else None,
+        "best": {"ticker": best["ticker"], "gain_loss_pct": round(best["gain_loss_pct"], 2)},
+        "worst": {"ticker": worst["ticker"], "gain_loss_pct": round(worst["gain_loss_pct"], 2)},
+    }
+
+
+def run_summary_alert(db: Session, period: str) -> int:
+    """Create the scheduled daily/weekly/monthly summary alert (best/worst
+    performer + total %), if that period's toggle is enabled."""
+    settings = _load_settings()
+    if not settings.get(f"{period}_summary_enabled", True):
+        return 0
+
+    summary = get_period_summary(db, period)
+    if summary is None:
+        return 0
+
+    total_pct, best, worst = summary["total_pct"], summary["best"], summary["worst"]
+    total_str = f"{total_pct:+.2f}%" if total_pct is not None else "n/a"
+    msg = (
+        f"Portfolio {total_str}. "
+        f"Best: {best['ticker']} {best['gain_loss_pct']:+.1f}%. "
+        f"Worst: {worst['ticker']} {worst['gain_loss_pct']:+.1f}%."
+    )
+    _save_alert(db, f"{period}_summary", msg, value=total_pct)
+    print(f"{period.capitalize()} summary: created alert")
+    return 1
 
 
 def get_live_conditions(db: Session) -> dict:

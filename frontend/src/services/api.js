@@ -245,6 +245,11 @@ export const api = {
     return handleResponse(response);
   },
 
+  async getAlertSummary(period = 'daily') {
+    const response = await fetch(`${API_BASE}/alerts/summary?period=${period}`);
+    return handleResponse(response);
+  },
+
   async clearAllAlerts() {
     const response = await fetch(`${API_BASE}/alerts`, { method: 'DELETE' });
     return handleResponse(response);

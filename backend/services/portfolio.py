@@ -208,7 +208,7 @@ def get_portfolio_with_performance(db: Session) -> schemas.PortfolioOverview:
     )
 
 
-_PERIOD_DAYS = {"1m": 30, "3m": 90, "6m": 180, "1y": 365}
+_PERIOD_DAYS = {"7d": 7, "1m": 30, "3m": 90, "6m": 180, "1y": 365}
 
 
 def _period_start_date(period: str, today: date) -> Optional[date]:

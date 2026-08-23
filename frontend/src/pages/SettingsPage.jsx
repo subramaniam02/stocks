@@ -15,6 +15,9 @@ const ALERT_TOGGLES = [
   { key: 'portfolio_drop_enabled', label: 'Portfolio drop', hint: 'Portfolio value down 5%+ for the day.' },
   { key: 'must_act_enabled', label: 'Must-act check', hint: 'Midday LLM check for urgent situations.' },
   { key: 'market_close_review_enabled', label: 'Market-close review', hint: 'Daily LLM recap + buy/sell/harvest actions.' },
+  { key: 'daily_summary_enabled', label: 'Daily summary', hint: 'Total % plus best/worst performer, end of day.' },
+  { key: 'weekly_summary_enabled', label: 'Weekly summary', hint: 'Total % plus best/worst performer, Fridays.' },
+  { key: 'monthly_summary_enabled', label: 'Monthly summary', hint: 'Total % plus best/worst performer, 1st of month.' },
 ];
 
 function ToggleSwitch({ checked, onChange, label }) {

@@ -133,6 +133,49 @@ def check_eod():
         db.close()
 
 
+def check_daily_summary():
+    """Weekdays, 4:10 PM EST: best/worst performer + total % for the day."""
+    db = SessionLocal()
+    try:
+        now_est = datetime.now(EST)
+        if now_est.weekday() >= 5:
+            return
+        from services.alert_checker import run_summary_alert
+        run_summary_alert(db, "daily")
+    except Exception as e:
+        print(f"Error in daily summary: {e}")
+    finally:
+        db.close()
+
+
+def check_weekly_summary():
+    """Fridays, 4:12 PM EST: best/worst performer + total % for the week."""
+    db = SessionLocal()
+    try:
+        now_est = datetime.now(EST)
+        if now_est.weekday() != 4:
+            return
+        from services.alert_checker import run_summary_alert
+        run_summary_alert(db, "weekly")
+    except Exception as e:
+        print(f"Error in weekly summary: {e}")
+    finally:
+        db.close()
+
+
+def check_monthly_summary():
+    """1st of each month, 4:15 PM EST: best/worst performer + total % for
+    the trailing 30 days."""
+    db = SessionLocal()
+    try:
+        from services.alert_checker import run_summary_alert
+        run_summary_alert(db, "monthly")
+    except Exception as e:
+        print(f"Error in monthly summary: {e}")
+    finally:
+        db.close()
+
+
 def start_scheduler():
     """Start the background scheduler for daily snapshots."""
     scheduler.add_job(
@@ -176,12 +219,37 @@ def start_scheduler():
         replace_existing=True
     )
 
+    scheduler.add_job(
+        check_daily_summary,
+        CronTrigger(hour=16, minute=10, timezone=EST),
+        id='daily_summary',
+        name='Daily portfolio summary (best/worst performer)',
+        replace_existing=True
+    )
+
+    scheduler.add_job(
+        check_weekly_summary,
+        CronTrigger(hour=16, minute=12, timezone=EST),
+        id='weekly_summary',
+        name='Weekly portfolio summary (Fridays, best/worst performer)',
+        replace_existing=True
+    )
+
+    scheduler.add_job(
+        check_monthly_summary,
+        CronTrigger(day=1, hour=16, minute=15, timezone=EST),
+        id='monthly_summary',
+        name='Monthly portfolio summary (1st of month, best/worst performer)',
+        replace_existing=True
+    )
+
     scheduler.start()
     print("Scheduler started - will take snapshots at 4:00 PM EST on weekdays")
     print("EOD snapshot retry registered (6:00 PM EST weekdays)")
     print("Lot tracker registered (every 5 minutes, bookkeeping only)")
     print("Midday checks registered (12:05 PM EST weekdays)")
     print("EOD review registered (4:05 PM EST weekdays)")
+    print("Daily/weekly/monthly summary alerts registered (4:10/4:12/4:15 PM EST)")
 
     # Pre-warm the bulk cache in the background so the first page load is fast
     threading.Thread(target=_startup_cache_warmup, daemon=True).start()

@@ -747,6 +747,18 @@ def get_live_alert_conditions(db: Session = Depends(get_db)):
     return alert_checker.get_live_conditions(db)
 
 
+@app.get("/api/alerts/summary")
+def get_alert_summary(period: str = "daily", db: Session = Depends(get_db)):
+    """Live daily/weekly/monthly portfolio summary: total %, best/worst
+    performer — the same computation used by the scheduled summary alert."""
+    if period not in ("daily", "weekly", "monthly"):
+        raise HTTPException(status_code=400, detail="period must be daily, weekly, or monthly")
+    summary = alert_checker.get_period_summary(db, period)
+    if summary is None:
+        raise HTTPException(status_code=404, detail="No summary available yet")
+    return summary
+
+
 @app.get("/api/alerts/unread-count")
 def get_unread_alert_count(db: Session = Depends(get_db)):
     """Get count of unread alerts."""

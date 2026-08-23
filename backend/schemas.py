@@ -186,6 +186,9 @@ class AlertSettings(BaseModel):
     portfolio_drop_enabled: bool
     must_act_enabled: bool
     market_close_review_enabled: bool
+    daily_summary_enabled: bool
+    weekly_summary_enabled: bool
+    monthly_summary_enabled: bool
 
 
 class AlertSettingsUpdate(BaseModel):
@@ -193,3 +196,6 @@ class AlertSettingsUpdate(BaseModel):
     portfolio_drop_enabled: Optional[bool] = None
     must_act_enabled: Optional[bool] = None
     market_close_review_enabled: Optional[bool] = None
+    daily_summary_enabled: Optional[bool] = None
+    weekly_summary_enabled: Optional[bool] = None
+    monthly_summary_enabled: Optional[bool] = None

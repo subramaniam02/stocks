@@ -1,16 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Bell, CheckCheck, Trash2, RefreshCw, TrendingDown, Moon, Zap, Sparkles,
-  AlertTriangle, CheckCircle2, Gauge,
+  Bell, CheckCheck, Trash2, RefreshCw, TrendingDown, Moon, Zap, Sparkles, Gauge, CalendarDays,
 } from 'lucide-react';
 import { api } from '../services/api';
 import AiActionText from '../components/AiActionText';
+
+const SUMMARY_PERIODS = [
+  { key: 'daily', label: 'Daily' },
+  { key: 'weekly', label: 'Weekly' },
+  { key: 'monthly', label: 'Monthly' },
+];
 
 function alertIcon(type) {
   if (type === 'lot_profit_drop') return <TrendingDown className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />;
   if (type === 'llm_must_act') return <Zap className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0" />;
   if (type === 'eod_summary') return <Moon className="w-4 h-4 text-slate-400 shrink-0" />;
   if (type === 'portfolio_review') return <Sparkles className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />;
+  if (type === 'daily_summary' || type === 'weekly_summary' || type === 'monthly_summary') {
+    return <CalendarDays className="w-4 h-4 text-indigo-500 dark:text-indigo-400 shrink-0" />;
+  }
   return <Bell className="w-4 h-4 text-slate-400 shrink-0" />;
 }
 
@@ -20,6 +28,9 @@ function alertBadge(type) {
   if (type === 'llm_must_act') return <span className={`${cls} bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-300`}>Must Act</span>;
   if (type === 'eod_summary') return <span className={`${cls} bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300`}>Daily Recap</span>;
   if (type === 'portfolio_review') return <span className={`${cls} bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300`}>AI Review</span>;
+  if (type === 'daily_summary') return <span className={`${cls} bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300`}>Daily Summary</span>;
+  if (type === 'weekly_summary') return <span className={`${cls} bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300`}>Weekly Summary</span>;
+  if (type === 'monthly_summary') return <span className={`${cls} bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300`}>Monthly Summary</span>;
   return null;
 }
 
@@ -104,6 +115,97 @@ function LiveConditions({ live, onTickerClick }) {
   );
 }
 
+function PerformerCard({ label, performer, colorClass, onTickerClick }) {
+  return (
+    <div className="flex-1 bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3">
+      <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{label}</p>
+      {performer ? (
+        <button onClick={() => onTickerClick?.(performer.ticker)} className="flex items-baseline gap-2 hover:underline">
+          <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{performer.ticker}</span>
+          <span className={`text-sm font-semibold tabular-nums ${colorClass}`}>
+            {performer.gain_loss_pct >= 0 ? '+' : ''}{performer.gain_loss_pct.toFixed(2)}%
+          </span>
+        </button>
+      ) : (
+        <span className="text-sm text-slate-400 dark:text-slate-500">—</span>
+      )}
+    </div>
+  );
+}
+
+function PortfolioSummary({ onTickerClick }) {
+  const [period, setPeriod] = useState('daily');
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(async (p) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.getAlertSummary(p);
+      setSummary(data);
+    } catch (e) {
+      setSummary(null);
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(period); }, [period, load]);
+
+  const totalPos = (summary?.total_pct ?? 0) >= 0;
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900/60 rounded-md p-0.5">
+          {SUMMARY_PERIODS.map(p => (
+            <button
+              key={p.key}
+              onClick={() => setPeriod(p.key)}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded transition-colors ${
+                period === p.key ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {summary?.total_pct != null && (
+          <span className={`text-lg font-bold tabular-nums ${totalPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+            {totalPos ? '+' : ''}{summary.total_pct.toFixed(2)}%
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />
+        </div>
+      ) : error ? (
+        <p className="text-xs text-slate-400 dark:text-slate-500 py-4 text-center">No {period} data available yet</p>
+      ) : (
+        <div className="flex gap-3">
+          <PerformerCard
+            label="Best"
+            performer={summary?.best}
+            colorClass="text-emerald-600 dark:text-emerald-400"
+            onTickerClick={onTickerClick}
+          />
+          <PerformerCard
+            label="Worst"
+            performer={summary?.worst}
+            colorClass="text-red-500 dark:text-red-400"
+            onTickerClick={onTickerClick}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AlertRow({ alert, onMarkRead }) {
   return (
     <div className={`flex items-start gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors ${!alert.is_read ? 'bg-blue-50/40 dark:bg-slate-700/20' : ''}`}>
@@ -178,6 +280,11 @@ export default function AlertsPage({ alerts, unreadCount, onMarkRead, onMarkAllR
           Refresh
         </button>
       </div>
+
+      <section className="space-y-2">
+        <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Portfolio Summary</h2>
+        <PortfolioSummary onTickerClick={onTickerClick} />
+      </section>
 
       <section className="space-y-2">
         <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Live Conditions</h2>
