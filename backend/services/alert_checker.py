@@ -291,25 +291,29 @@ def get_period_summary(db: Session, period: str) -> Optional[dict]:
     if not ranked:
         return None
 
-    gained_dollar = sum(r["gain_loss"] for r in ranked if r["gain_loss"] > 0)
-    lost_dollar = sum(r["gain_loss"] for r in ranked if r["gain_loss"] < 0)
-    gainers_count = sum(1 for r in ranked if r["gain_loss_pct"] > 0)
-    losers_count = sum(1 for r in ranked if r["gain_loss_pct"] < 0)
-    unchanged_count = len(ranked) - gainers_count - losers_count
+    def _rounded(r):
+        return {"ticker": r["ticker"], "gain_loss_pct": round(r["gain_loss_pct"], 2), "gain_loss": round(r["gain_loss"], 2)}
 
-    ranked.sort(key=lambda r: r["gain_loss_pct"], reverse=True)
-    best, worst = ranked[0], ranked[-1]
+    gainers = sorted((r for r in ranked if r["gain_loss_pct"] > 0), key=lambda r: r["gain_loss_pct"], reverse=True)
+    losers = sorted((r for r in ranked if r["gain_loss_pct"] < 0), key=lambda r: r["gain_loss_pct"])
+    unchanged_count = len(ranked) - len(gainers) - len(losers)
+
+    gained_dollar = sum(r["gain_loss"] for r in gainers)
+    lost_dollar = sum(r["gain_loss"] for r in losers)
+
     return {
         "period": period,
         "total_pct": round(total_pct, 2) if total_pct is not None else None,
         "gained_dollar": round(gained_dollar, 2),
         "lost_dollar": round(lost_dollar, 2),
-        "gainers_count": gainers_count,
-        "losers_count": losers_count,
+        "gainers_count": len(gainers),
+        "losers_count": len(losers),
         "unchanged_count": unchanged_count,
         "total_count": len(ranked),
-        "best": {"ticker": best["ticker"], "gain_loss_pct": round(best["gain_loss_pct"], 2)},
-        "worst": {"ticker": worst["ticker"], "gain_loss_pct": round(worst["gain_loss_pct"], 2)},
+        "gainers": [_rounded(r) for r in gainers],
+        "losers": [_rounded(r) for r in losers],
+        "best": _rounded(gainers[0]) if gainers else None,
+        "worst": _rounded(losers[0]) if losers else None,
     }
 
 
@@ -328,10 +332,12 @@ def run_summary_alert(db: Session, period: str) -> int:
     total_str = f"{total_pct:+.2f}%" if total_pct is not None else "n/a"
     msg = (
         f"Portfolio {total_str} (+${summary['gained_dollar']:.0f} / -${abs(summary['lost_dollar']):.0f}). "
-        f"{summary['gainers_count']} up, {summary['losers_count']} down. "
-        f"Best: {best['ticker']} {best['gain_loss_pct']:+.1f}%. "
-        f"Worst: {worst['ticker']} {worst['gain_loss_pct']:+.1f}%."
+        f"{summary['gainers_count']} up, {summary['losers_count']} down."
     )
+    if best:
+        msg += f" Best: {best['ticker']} {best['gain_loss_pct']:+.1f}%."
+    if worst:
+        msg += f" Worst: {worst['ticker']} {worst['gain_loss_pct']:+.1f}%."
     _save_alert(db, f"{period}_summary", msg, value=total_pct)
     print(f"{period.capitalize()} summary: created alert")
     return 1
