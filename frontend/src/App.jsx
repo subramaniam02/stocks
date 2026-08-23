@@ -68,38 +68,38 @@ function RefreshBar({ lastRefreshed, refreshIntervalMs, portfolio }) {
   const overallNetPos = overallNet >= 0;
 
   return (
-    <div className="bg-slate-800 border-b border-slate-700 px-4 py-2.5 overflow-x-auto">
+    <div className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2.5 overflow-x-auto">
       <div className="max-w-screen-2xl mx-auto flex items-center gap-5 w-max min-w-full">
-        <span className="text-sm text-slate-400 shrink-0 whitespace-nowrap">
-          Last updated: <span className="text-slate-200 font-medium">{timeStr}</span>
+        <span className="text-sm text-slate-500 dark:text-slate-400 shrink-0 whitespace-nowrap">
+          Last updated: <span className="text-slate-700 dark:text-slate-200 font-medium">{timeStr}</span>
         </span>
 
-        <span className={`text-sm font-semibold px-2 py-0.5 rounded shrink-0 whitespace-nowrap ${marketOpen ? 'bg-emerald-900 text-emerald-300' : 'bg-slate-700 text-slate-400'}`}>
+        <span className={`text-sm font-semibold px-2 py-0.5 rounded shrink-0 whitespace-nowrap ${marketOpen ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
           {marketOpen ? 'Market open' : 'Market closed'}
         </span>
 
         {portfolio?.total_value != null && (
           <>
-            <div className="w-px h-4 bg-slate-700 shrink-0" />
-            <span className="text-sm text-slate-500 shrink-0 whitespace-nowrap">
+            <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 shrink-0" />
+            <span className="text-sm text-slate-400 dark:text-slate-500 shrink-0 whitespace-nowrap">
               Portfolio Value&nbsp;
-              <span className="text-slate-100 font-bold tabular-nums">${fmt(portfolio.total_value)}</span>
+              <span className="text-slate-900 dark:text-slate-100 font-bold tabular-nums">${fmt(portfolio.total_value)}</span>
             </span>
           </>
         )}
 
         {hasToday && (
           <>
-            <div className="w-px h-4 bg-slate-700 shrink-0" />
+            <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 shrink-0" />
             <div className="flex items-center gap-3 shrink-0">
-              <span className="text-sm text-slate-500 uppercase tracking-wider font-semibold shrink-0 whitespace-nowrap">Today</span>
-              <span className="text-sm font-bold tabular-nums text-emerald-400 shrink-0 whitespace-nowrap">
-                Gaining&nbsp;<span className="text-emerald-300">+${fmt(todayGains)}</span>
+              <span className="text-sm text-slate-400 dark:text-slate-500 uppercase tracking-wider font-semibold shrink-0 whitespace-nowrap">Today</span>
+              <span className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400 shrink-0 whitespace-nowrap">
+                Gaining&nbsp;<span className="text-emerald-700 dark:text-emerald-300">+${fmt(todayGains)}</span>
               </span>
-              <span className="text-sm font-bold tabular-nums text-red-400 shrink-0 whitespace-nowrap">
-                Losing&nbsp;<span className="text-red-300">-${fmt(Math.abs(todayLosses))}</span>
+              <span className="text-sm font-bold tabular-nums text-red-500 dark:text-red-400 shrink-0 whitespace-nowrap">
+                Losing&nbsp;<span className="text-red-600 dark:text-red-300">-${fmt(Math.abs(todayLosses))}</span>
               </span>
-              <span className={`text-sm font-bold tabular-nums shrink-0 whitespace-nowrap ${netPos ? 'text-emerald-300' : 'text-red-300'}`}>
+              <span className={`text-sm font-bold tabular-nums shrink-0 whitespace-nowrap ${netPos ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
                 Net&nbsp;{netPos ? '+' : '-'}${fmt(Math.abs(todayNet))}
               </span>
             </div>
@@ -108,26 +108,26 @@ function RefreshBar({ lastRefreshed, refreshIntervalMs, portfolio }) {
 
         {hasOverall && (
           <>
-            <div className="w-px h-4 bg-slate-700 shrink-0" />
+            <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 shrink-0" />
             <div className="flex items-center gap-3 shrink-0">
-              <span className="text-sm text-slate-500 uppercase tracking-wider font-semibold shrink-0 whitespace-nowrap">Overall</span>
-              <span className="text-sm font-bold tabular-nums text-emerald-400 shrink-0 whitespace-nowrap">
-                Gaining&nbsp;<span className="text-emerald-300">+${fmt(overallGains)}</span>
+              <span className="text-sm text-slate-400 dark:text-slate-500 uppercase tracking-wider font-semibold shrink-0 whitespace-nowrap">Overall</span>
+              <span className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400 shrink-0 whitespace-nowrap">
+                Gaining&nbsp;<span className="text-emerald-700 dark:text-emerald-300">+${fmt(overallGains)}</span>
               </span>
-              <span className="text-sm font-bold tabular-nums text-red-400 shrink-0 whitespace-nowrap">
-                Losing&nbsp;<span className="text-red-300">-${fmt(Math.abs(overallLosses))}</span>
+              <span className="text-sm font-bold tabular-nums text-red-500 dark:text-red-400 shrink-0 whitespace-nowrap">
+                Losing&nbsp;<span className="text-red-600 dark:text-red-300">-${fmt(Math.abs(overallLosses))}</span>
               </span>
-              <span className={`text-sm font-bold tabular-nums shrink-0 whitespace-nowrap ${overallNetPos ? 'text-emerald-300' : 'text-red-300'}`}>
+              <span className={`text-sm font-bold tabular-nums shrink-0 whitespace-nowrap ${overallNetPos ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
                 Net&nbsp;{overallNetPos ? '+' : '-'}${fmt(Math.abs(overallNet))}
               </span>
             </div>
           </>
         )}
 
-        <span className="text-sm text-slate-500 ml-auto shrink-0 whitespace-nowrap">
+        <span className="text-sm text-slate-400 dark:text-slate-500 ml-auto shrink-0 whitespace-nowrap">
           {marketOpen
-            ? <>Next refresh in <span className="text-slate-300 font-medium tabular-nums">{mins}:{String(secs).padStart(2, '0')}</span></>
-            : <span className="text-slate-600">Auto-refresh paused (market closed)</span>
+            ? <>Next refresh in <span className="text-slate-700 dark:text-slate-300 font-medium tabular-nums">{mins}:{String(secs).padStart(2, '0')}</span></>
+            : <span className="text-slate-400 dark:text-slate-600">Auto-refresh paused (market closed)</span>
           }
         </span>
       </div>
@@ -148,14 +148,14 @@ function TickerSearch({ onSearch }) {
 
   return (
     <form onSubmit={submit} className="relative shrink-0">
-      <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+      <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
       <input
         type="text"
         value={value}
         onChange={e => setValue(e.target.value)}
         placeholder="Look up ticker…"
         aria-label="Look up ticker"
-        className="w-32 sm:w-44 pl-8 pr-2 py-1.5 text-sm bg-slate-800 border border-slate-700 rounded-md text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+        className="w-32 sm:w-44 pl-8 pr-2 py-1.5 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
       />
     </form>
   );
@@ -170,44 +170,44 @@ function LeftRail({ portfolio, currentPage, onSettings, onTickerClick, onRemoveF
     // position:fixed descendant, which broke the Movers/AI panels (they'd get clipped
     // to this rail's tiny box instead of the viewport). Center with flex instead.
     <div className="fixed left-0 inset-y-0 z-40 flex items-center">
-      <div className="flex flex-col items-center gap-1 py-3 px-1.5 rounded-r-xl bg-slate-900 border border-l-0 border-slate-800 shadow-lg">
+      <div className="flex flex-col items-center gap-1 py-3 px-1.5 rounded-r-xl bg-white dark:bg-slate-900 border border-l-0 border-slate-200 dark:border-slate-800 shadow-lg">
         <TopMoversWidget
           portfolio={portfolio}
           open={openPanel === 'movers'}
           onOpenChange={(v) => setOpenPanel(v ? 'movers' : null)}
           onTickerClick={onTickerClick}
         />
-        <div className="w-6 h-px bg-slate-800 my-1" />
+        <div className="w-6 h-px bg-slate-200 dark:bg-slate-800 my-1" />
         <PortfolioMixWidget
           portfolio={portfolio}
           open={openPanel === 'mix'}
           onOpenChange={(v) => setOpenPanel(v ? 'mix' : null)}
           onTickerClick={onTickerClick}
         />
-        <div className="w-6 h-px bg-slate-800 my-1" />
+        <div className="w-6 h-px bg-slate-200 dark:bg-slate-800 my-1" />
         <WatchlistWidget
           open={openPanel === 'watchlist'}
           onOpenChange={(v) => setOpenPanel(v ? 'watchlist' : null)}
           onTickerClick={onTickerClick}
           onRemoveFromWatchlist={onRemoveFromWatchlist}
         />
-        <div className="w-6 h-px bg-slate-800 my-1" />
+        <div className="w-6 h-px bg-slate-200 dark:bg-slate-800 my-1" />
         <NetWealthWidget
           portfolio={portfolio}
           open={openPanel === 'wealth'}
           onOpenChange={(v) => setOpenPanel(v ? 'wealth' : null)}
         />
-        <div className="w-6 h-px bg-slate-800 my-1" />
+        <div className="w-6 h-px bg-slate-200 dark:bg-slate-800 my-1" />
         <AIChatWidget
           open={openPanel === 'ai'}
           onOpenChange={(v) => setOpenPanel(v ? 'ai' : null)}
         />
-        <div className="w-6 h-px bg-slate-800 my-1" />
+        <div className="w-6 h-px bg-slate-200 dark:bg-slate-800 my-1" />
         <button
           onClick={() => { setOpenPanel(null); onSettings(); }}
           title="Settings"
           className={`p-2 rounded-lg transition-colors ${
-            currentPage === 'settings' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+            currentPage === 'settings' ? 'bg-slate-600 text-white' : 'text-slate-400 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'
           }`}
         >
           <Settings className="w-4 h-4" />
@@ -369,7 +369,7 @@ export default function App() {
       className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
         currentPage === page
           ? 'bg-slate-600 text-white'
-          : 'text-slate-300 hover:text-white hover:bg-slate-700'
+          : 'text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'
       }`}
     >
       {icon}{label}
@@ -384,12 +384,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
       {/* ── Header (always visible) ── */}
-      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-10">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 h-14">
             <button onClick={() => setCurrentPage('movers')} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
-              <span className="text-white font-semibold tracking-tight">Portfolio Tracker</span>
+              <TrendingUp className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+              <span className="text-slate-900 dark:text-white font-semibold tracking-tight">Portfolio Tracker</span>
             </button>
 
             {/* Nav tabs — visually centered in the header */}
@@ -400,7 +400,7 @@ export default function App() {
               {navBtn('realized', <Receipt     className="w-4 h-4" />, 'Taxes')}
               {navBtn('watchlist', <Star       className="w-4 h-4" />, 'Watchlist')}
               {navBtn('alerts',   <Bell        className="w-4 h-4" />, 'Alerts', unreadCount)}
-              <div className="w-px h-5 bg-slate-700 mx-1" />
+              <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1" />
               <TickerSearch onSearch={handleTickerClick} />
             </div>
 

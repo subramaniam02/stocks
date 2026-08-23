@@ -47,7 +47,7 @@ export default function PortfolioMixWidget({ portfolio, open, onOpenChange, onTi
         onClick={() => onOpenChange(!open)}
         title="Portfolio mix"
         className={`p-2 rounded-lg transition-colors ${
-          open ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+          open ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'
         }`}
       >
         <PieChartIcon className="w-4 h-4 text-blue-400" />

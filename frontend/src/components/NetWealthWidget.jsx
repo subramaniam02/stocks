@@ -94,7 +94,7 @@ export default function NetWealthWidget({ portfolio, open, onOpenChange }) {
         onClick={() => onOpenChange(!open)}
         title="Net wealth"
         className={`p-2 rounded-lg transition-colors ${
-          open ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+          open ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'
         }`}
       >
         <Landmark className="w-4 h-4 text-amber-400" />

@@ -151,7 +151,7 @@ export default function TopMoversWidget({ portfolio, open, onOpenChange, onTicke
         onClick={() => onOpenChange(!open)}
         title="Top movers"
         className={`p-2 rounded-lg transition-colors ${
-          open ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'
+          open ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'
         }`}
       >
         <Trophy className="w-4 h-4 text-emerald-400" />
