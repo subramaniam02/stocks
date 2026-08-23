@@ -185,6 +185,8 @@ def get_portfolio_with_performance(db: Session) -> schemas.PortfolioOverview:
             return_3y=pd_entry.get("3y"),
             return_5y=pd_entry.get("5y"),
             price_stale=data["price_stale"],
+            week_52_high=pd_entry.get("week52_high"),
+            week_52_low=pd_entry.get("week52_low"),
         ))
 
         total_value += stock_value

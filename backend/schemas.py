@@ -91,6 +91,8 @@ class StockSummary(BaseModel):
     return_3y: Optional[float] = None
     return_5y: Optional[float] = None
     price_stale: bool = False
+    week_52_high: Optional[float] = None
+    week_52_low: Optional[float] = None
 
 
 class PortfolioOverview(BaseModel):

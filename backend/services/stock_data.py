@@ -410,7 +410,10 @@ def get_ticker_name(ticker: str) -> Optional[str]:
 
 def _do_bulk_fetch(tickers: list[str], cache_key: str) -> Dict[str, Dict]:
     """Perform the actual yfinance download and populate the bulk cache."""
-    empty_entry = lambda: {"price": None, "name": None, **{p: None for p in _PERIOD_TRADING_DAYS}}
+    empty_entry = lambda: {
+        "price": None, "name": None, "week52_high": None, "week52_low": None,
+        **{p: None for p in _PERIOD_TRADING_DAYS},
+    }
 
     try:
         download_arg = tickers if len(tickers) > 1 else tickers[0]
@@ -435,6 +438,14 @@ def _do_bulk_fetch(tickers: list[str], cache_key: str) -> Dict[str, Dict]:
                         if len(close) > n_days:
                             past = float(close.iloc[-(n_days + 1)])
                             entry[period] = ((current - past) / past * 100) if past > 0 else None
+                # True 52-week high/low from the High/Low columns (not just Close),
+                # off the same already-downloaded 5y history — no extra API calls.
+                high = (raw["High"] if len(tickers) == 1 else raw["High"][ticker]).dropna().tail(252)
+                low = (raw["Low"] if len(tickers) == 1 else raw["Low"][ticker]).dropna().tail(252)
+                if len(high) > 0:
+                    entry["week52_high"] = float(high.max())
+                if len(low) > 0:
+                    entry["week52_low"] = float(low.min())
         except Exception as e:
             print(f"Error processing bulk data for {ticker}: {e}")
 
