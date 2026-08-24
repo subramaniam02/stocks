@@ -15,6 +15,7 @@ import RealizedPage from './pages/RealizedPage';
 import WatchlistPage from './pages/WatchlistPage';
 import AlertsPage from './pages/AlertsPage';
 import SettingsPage from './pages/SettingsPage';
+import { getRefreshIntervalMinutes, setRefreshIntervalMinutes } from './utils/refreshSettings';
 
 function fmt(n) { return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
 
@@ -230,9 +231,15 @@ export default function App() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [trendsPeriod, setTrendsPeriod] = useState('1d');
   const [watchlist, setWatchlist] = useState([]);
+  const [refreshIntervalMinutes, setRefreshIntervalMinutesState] = useState(getRefreshIntervalMinutes);
 
-  const AUTO_REFRESH_MS = 15 * 60 * 1000;
+  const AUTO_REFRESH_MS = refreshIntervalMinutes * 60 * 1000;
   const lastRefreshedRef = useRef(null);
+
+  const handleRefreshIntervalChange = useCallback((minutes) => {
+    setRefreshIntervalMinutes(minutes);
+    setRefreshIntervalMinutesState(minutes);
+  }, []);
 
   const loadRealized = useCallback(async () => {
     try {
@@ -304,13 +311,18 @@ export default function App() {
     }
   }, []);
 
-  // Initial load + 15-min interval (only fires when market is open)
+  // Initial load, once
   useEffect(() => {
     loadPortfolio();
     loadRealized();
     loadAlerts();
     loadWatchlist();
     startMarketInsightsAutoRefresh();
+  }, [loadPortfolio, loadRealized, loadAlerts, loadWatchlist]);
+
+  // Auto-refresh interval (only fires when market is open) — re-armed whenever
+  // the user changes the refresh-frequency setting.
+  useEffect(() => {
     const interval = setInterval(() => {
       if (isMarketOpen()) {
         loadPortfolio();
@@ -318,7 +330,7 @@ export default function App() {
       }
     }, AUTO_REFRESH_MS);
     return () => clearInterval(interval);
-  }, [loadPortfolio, loadRealized, loadAlerts, loadWatchlist]);
+  }, [AUTO_REFRESH_MS, loadPortfolio, loadAlerts]);
 
   // Refresh on tab visibility or window focus (market hours only, 1-min cooldown)
   useEffect(() => {
@@ -488,6 +500,8 @@ export default function App() {
               portfolio={portfolio}
               onTickerClick={handleTickerClick}
               onPortfolioChange={loadPortfolio}
+              refreshIntervalMinutes={refreshIntervalMinutes}
+              onRefreshIntervalChange={handleRefreshIntervalChange}
             />
           </main>
         )}

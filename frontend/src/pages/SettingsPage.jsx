@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { LayoutGrid, Circle, Settings as SettingsIcon, Trash2, Info, Sun, Moon, Bug, ChevronDown, ChevronRight, Bell, FileText, X } from 'lucide-react';
+import { LayoutGrid, Circle, Settings as SettingsIcon, Trash2, Info, Sun, Moon, Bug, ChevronDown, ChevronRight, Bell, FileText, X, RefreshCw } from 'lucide-react';
+import { REFRESH_INTERVAL_OPTIONS } from '../utils/refreshSettings';
 import {
   VIS_STYLES,
   getTodayStyle, setTodayStyle,
@@ -116,6 +117,35 @@ function ThemeSetting() {
             : <Sun className="w-3.5 h-3.5 text-amber-500" />}
         </span>
       </button>
+    </div>
+  );
+}
+
+function RefreshIntervalSetting({ value, onChange }) {
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+      <div className="flex items-center gap-2 mb-1">
+        <RefreshCw className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Auto-Refresh Frequency</h3>
+      </div>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 mb-4">
+        How often the portfolio and alerts refresh automatically while the market is open.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {REFRESH_INTERVAL_OPTIONS.map(minutes => (
+          <button
+            key={minutes}
+            onClick={() => onChange(minutes)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
+              value === minutes
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400'
+                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-500 text-slate-600 dark:text-slate-300'
+            }`}
+          >
+            {minutes === 1 ? '1 min' : `${minutes} min`}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -242,7 +272,7 @@ function DeveloperSetting() {
   );
 }
 
-export default function SettingsPage({ onClearAll, portfolio, onTickerClick, onPortfolioChange }) {
+export default function SettingsPage({ onClearAll, portfolio, onTickerClick, onPortfolioChange, refreshIntervalMinutes, onRefreshIntervalChange }) {
   const [todayStyle, setTodayStyleState] = useState(getTodayStyle());
   const [overallStyle, setOverallStyleState] = useState(getOverallStyle());
 
@@ -265,6 +295,8 @@ export default function SettingsPage({ onClearAll, portfolio, onTickerClick, onP
 
       <div className="max-w-2xl space-y-5">
         <ThemeSetting />
+
+        <RefreshIntervalSetting value={refreshIntervalMinutes} onChange={onRefreshIntervalChange} />
 
         <VisualizationSetting
           label="Today's Trend visualization"
