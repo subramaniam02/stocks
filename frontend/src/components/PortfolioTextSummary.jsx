@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, RefreshCw, X, Info } from 'lucide-react';
+import { FileText, RefreshCw, X } from 'lucide-react';
 import { api } from '../services/api';
 
 const PERIODS = [
@@ -121,17 +121,10 @@ function PeriodSection({ period, stats, error, atHigh, atLow, onTickerClick }) {
 
   return (
     <div>
-      <h3 className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+      <h3 className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
         {period.label}
         {dateRange && (
-          <button
-            type="button"
-            title={dateRange}
-            aria-label={`Date range: ${dateRange}`}
-            className="p-0.5 -m-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-help"
-          >
-            <Info className="w-3 h-3" />
-          </button>
+          <span className="normal-case font-normal text-slate-400 dark:text-slate-500">({dateRange})</span>
         )}
       </h3>
       <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
