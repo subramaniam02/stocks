@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, RefreshCw, X } from 'lucide-react';
+import { FileText, RefreshCw, X, Info } from 'lucide-react';
 import { api } from '../services/api';
 
 const PERIODS = [
@@ -10,6 +10,12 @@ const PERIODS = [
 
 function fmtDollar(n) {
   return Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function fmtDateRange(startIso, endIso) {
+  if (!startIso || !endIso) return null;
+  const fmt = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return `${fmt(startIso)} – ${fmt(endIso)}`;
 }
 
 function TickerChips({ tickers, colorClass, onTickerClick }) {
@@ -72,10 +78,12 @@ function buildTodayStats(portfolio) {
   const netDollar = gainedDollar + lostDollar;
   const yesterdayValue = portfolio.total_value - netDollar;
   const totalPct = yesterdayValue > 0 ? (netDollar / yesterdayValue) * 100 : null;
+  const today = new Date().toISOString().slice(0, 10);
   return {
     totalPct, gainedDollar, lostDollar, gainers, losers,
     gainersCount: gainers.length, losersCount: losers.length, unchangedCount: unchanged, noDataCount: noData,
     totalCount: portfolio.stocks.length,
+    startDate: today, endDate: today,
   };
 }
 
@@ -91,6 +99,7 @@ function statsFromApi(data) {
     unchangedCount: data.unchanged_count,
     noDataCount: 0,
     totalCount: data.total_count,
+    startDate: data.start_date, endDate: data.end_date,
   };
 }
 
@@ -108,10 +117,16 @@ function PeriodSection({ period, stats, error, atHigh, atLow, onTickerClick }) {
 
   const netDollar = stats.gainedDollar + stats.lostDollar;
   const netPos = netDollar >= 0;
+  const dateRange = period.key !== 'today' ? fmtDateRange(stats.startDate, stats.endDate) : null;
 
   return (
     <div>
-      <h3 className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{period.label}</h3>
+      <h3 className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+        {period.label}
+        {dateRange && (
+          <Info className="w-3 h-3 cursor-help" title={dateRange} />
+        )}
+      </h3>
       <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
         {period.prose} your portfolio{' '}
         <span className="font-semibold text-emerald-600 dark:text-emerald-400">gained +${fmtDollar(stats.gainedDollar)}</span>

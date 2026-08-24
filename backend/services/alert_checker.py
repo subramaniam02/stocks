@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 from sqlalchemy.orm import Session
 
@@ -265,6 +265,7 @@ def get_period_summary(db: Session, period: str) -> Optional[dict]:
         if not port.stocks:
             return None
         total_pct = _compute_today_pct(port)
+        start_date = end_date = date.today().isoformat()
         ranked = [
             {
                 "ticker": s.ticker,
@@ -283,6 +284,8 @@ def get_period_summary(db: Session, period: str) -> Optional[dict]:
         if not stocks:
             return None
         total_pct = perf.get("total_gain_loss_pct")
+        start_date = perf.get("start_date")
+        end_date = date.today().isoformat()
         ranked = [
             {"ticker": s["ticker"], "gain_loss_pct": s["gain_loss_pct"], "gain_loss": s["gain_loss"]}
             for s in stocks if not s.get("price_stale")
@@ -303,6 +306,8 @@ def get_period_summary(db: Session, period: str) -> Optional[dict]:
 
     return {
         "period": period,
+        "start_date": start_date,
+        "end_date": end_date,
         "total_pct": round(total_pct, 2) if total_pct is not None else None,
         "gained_dollar": round(gained_dollar, 2),
         "lost_dollar": round(lost_dollar, 2),
