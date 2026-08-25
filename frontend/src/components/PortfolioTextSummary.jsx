@@ -4,8 +4,8 @@ import { api } from '../services/api';
 
 const PERIODS = [
   { key: 'today', label: 'Today', prose: 'Today' },
-  { key: 'weekly', label: 'This Week', prose: 'This week' },
-  { key: 'monthly', label: 'This Month', prose: 'This month' },
+  { key: 'weekly', label: 'Last 7 Days', prose: 'Over the last 7 days' },
+  { key: 'monthly', label: 'Last 30 Days', prose: 'Over the last 30 days' },
 ];
 
 function fmtDollar(n) {
