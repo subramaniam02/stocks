@@ -203,27 +203,27 @@ function StatChip({ label, value, color = 'text-white' }) {
 function SelectionBar({ summary, onClear, onSell, positionPct }) {
   if (!summary) {
     return (
-      <div className="sticky bottom-0 z-30 bg-slate-900 border-t border-slate-700 px-5 py-3 flex items-center">
-        <span className="text-xs text-slate-400">Check the boxes below to select lots — you'll see totals and a sell option here.</span>
+      <div className="sticky bottom-0 z-30 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 px-5 py-3 flex items-center">
+        <span className="text-xs text-slate-500 dark:text-slate-400">Check the boxes below to select lots — you'll see totals and a sell option here.</span>
       </div>
     );
   }
   const pct = summary.cost > 0 ? (summary.gainLoss / summary.cost) * 100 : 0;
   const pos = summary.gainLoss >= 0;
   return (
-    <div className="sticky bottom-0 z-30 bg-slate-900 border-t border-slate-700 px-5 py-3 flex items-center gap-4 flex-wrap">
-      <span className="text-xs font-bold text-white shrink-0">{summary.count} lot{summary.count !== 1 ? 's' : ''} selected</span>
-      <div className="w-px h-4 bg-slate-700 shrink-0" />
+    <div className="sticky bottom-0 z-30 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 px-5 py-3 flex items-center gap-4 flex-wrap">
+      <span className="text-xs font-bold text-slate-900 dark:text-white shrink-0">{summary.count} lot{summary.count !== 1 ? 's' : ''} selected</span>
+      <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 shrink-0" />
       <StatChip label="Shares"    value={summary.shares.toFixed(2)} />
       <StatChip label="Cost"      value={`$${fmt2(summary.cost)}`} />
       <StatChip label="Proceeds"  value={`$${fmt2(summary.proceeds)}`} color="text-blue-400" />
       <StatChip label="Gain/Loss" value={`${fmtSign(summary.gainLoss)} (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)`} color={pos ? 'text-emerald-400' : 'text-red-400'} />
-      <div className="w-px h-4 bg-slate-700 shrink-0" />
+      <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 shrink-0" />
       <StatChip label="LT" value={summary.ltShares.toFixed(2)} color="text-emerald-400" />
       <StatChip label="ST" value={summary.stShares.toFixed(2)} color="text-amber-400" />
       {positionPct != null && (
         <>
-          <div className="w-px h-4 bg-slate-700 shrink-0" />
+          <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 shrink-0" />
           <StatChip label="% of Position" value={`${positionPct.toFixed(1)}%`} color="text-sky-400" />
         </>
       )}
@@ -231,7 +231,7 @@ function SelectionBar({ summary, onClear, onSell, positionPct }) {
         <button onClick={onSell} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors">
           <DollarSign className="w-3.5 h-3.5" /> Sell Lots
         </button>
-        <button onClick={onClear} className="flex items-center gap-1 text-slate-400 hover:text-white text-xs transition-colors px-1">
+        <button onClick={onClear} className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs transition-colors px-1">
           <XIcon className="w-3.5 h-3.5" /> Clear
         </button>
       </div>
@@ -244,12 +244,12 @@ function SelectionBar({ summary, onClear, onSell, positionPct }) {
 function RateField({ label, value, onChange }) {
   return (
     <div>
-      <label className="block text-[10px] text-slate-400 mb-1">{label}</label>
+      <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">{label}</label>
       <div className="relative">
         <input type="number" step="0.1" min="0" max="100" value={value}
           onChange={e => onChange(e.target.value === '' ? '' : parseFloat(e.target.value))}
-          className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-2.5 pr-6 py-1.5 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-500">%</span>
+          className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg pl-2.5 pr-6 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 dark:text-slate-500">%</span>
       </div>
     </div>
   );
@@ -320,14 +320,14 @@ function SelectionSidePanel({ selectedLotObjects, summary, portfolio, onClear, o
   if (!displaySummary) return null;
 
   return (
-    <div className={`shrink-0 overflow-hidden bg-slate-900 transition-all duration-200 ease-out ${open ? 'w-full sm:w-96 border-t sm:border-t-0 sm:border-l border-slate-700' : 'w-0 border-0'}`}>
+    <div className={`shrink-0 overflow-hidden bg-white dark:bg-slate-900 transition-all duration-200 ease-out ${open ? 'w-full sm:w-96 border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-700' : 'w-0 border-0'}`}>
     <div className="w-full sm:w-96 h-full flex flex-col">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 shrink-0">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
         <div>
-          <h2 className="text-sm font-bold text-white">{displaySummary.count} Lot{displaySummary.count !== 1 ? 's' : ''} Selected</h2>
-          <p className="text-xs text-slate-400 mt-0.5">{Object.keys(perTicker).join(', ')}</p>
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white">{displaySummary.count} Lot{displaySummary.count !== 1 ? 's' : ''} Selected</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{Object.keys(perTicker).join(', ')}</p>
         </div>
-        <button onClick={onClear} className="p-1.5 -m-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
+        <button onClick={onClear} className="p-1.5 -m-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
           <XIcon className="w-4 h-4" />
         </button>
       </div>
@@ -335,24 +335,24 @@ function SelectionSidePanel({ selectedLotObjects, summary, portfolio, onClear, o
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
         {/* Overview */}
         <div className="grid grid-cols-2 gap-3">
-          <div><p className="text-[10px] text-slate-500 uppercase tracking-wider">Shares</p><p className="text-sm font-semibold text-white tabular-nums">{displaySummary.shares.toFixed(2)}</p></div>
-          <div><p className="text-[10px] text-slate-500 uppercase tracking-wider">Cost</p><p className="text-sm font-semibold text-white tabular-nums">${fmt2(displaySummary.cost)}</p></div>
-          <div><p className="text-[10px] text-slate-500 uppercase tracking-wider">Proceeds</p><p className="text-sm font-semibold text-blue-400 tabular-nums">${fmt2(displaySummary.proceeds)}</p></div>
+          <div><p className="text-[10px] text-slate-500 dark:text-slate-500 uppercase tracking-wider">Shares</p><p className="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{displaySummary.shares.toFixed(2)}</p></div>
+          <div><p className="text-[10px] text-slate-500 dark:text-slate-500 uppercase tracking-wider">Cost</p><p className="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">${fmt2(displaySummary.cost)}</p></div>
+          <div><p className="text-[10px] text-slate-500 dark:text-slate-500 uppercase tracking-wider">Proceeds</p><p className="text-sm font-semibold text-blue-400 tabular-nums">${fmt2(displaySummary.proceeds)}</p></div>
           <div>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider">Gain/Loss</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-500 uppercase tracking-wider">Gain/Loss</p>
             <p className={`text-sm font-semibold tabular-nums ${displaySummary.gainLoss >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {fmtSign(displaySummary.gainLoss)} ({displaySummary.cost > 0 ? (displaySummary.gainLoss / displaySummary.cost * 100).toFixed(2) : '0.00'}%)
             </p>
           </div>
-          <div><p className="text-[10px] text-slate-500 uppercase tracking-wider">LT Shares</p><p className="text-sm font-semibold text-emerald-400 tabular-nums">{displaySummary.ltShares.toFixed(2)}</p></div>
-          <div><p className="text-[10px] text-slate-500 uppercase tracking-wider">ST Shares</p><p className="text-sm font-semibold text-amber-400 tabular-nums">{displaySummary.stShares.toFixed(2)}</p></div>
+          <div><p className="text-[10px] text-slate-500 dark:text-slate-500 uppercase tracking-wider">LT Shares</p><p className="text-sm font-semibold text-emerald-400 tabular-nums">{displaySummary.ltShares.toFixed(2)}</p></div>
+          <div><p className="text-[10px] text-slate-500 dark:text-slate-500 uppercase tracking-wider">ST Shares</p><p className="text-sm font-semibold text-amber-400 tabular-nums">{displaySummary.stShares.toFixed(2)}</p></div>
         </div>
 
         {/* Tax liability */}
-        <div className="border-t border-slate-800 pt-4">
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
           <div className="flex items-center gap-1.5 mb-3">
             <Calculator className="w-3.5 h-3.5 text-slate-500" />
-            <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Est. Tax Liability</h3>
+            <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Est. Tax Liability</h3>
           </div>
           <div className="grid grid-cols-3 gap-2 mb-3">
             <RateField label="Fed Ordinary" value={rates.fedOrdinaryPct} onChange={updateRate('fedOrdinaryPct')} />
@@ -360,26 +360,26 @@ function SelectionSidePanel({ selectedLotObjects, summary, portfolio, onClear, o
             <RateField label="State" value={rates.statePct} onChange={updateRate('statePct')} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><p className="text-[10px] text-slate-500 uppercase tracking-wider">Taxable ST / LT</p><p className="text-xs font-semibold text-white tabular-nums">${fmt2(taxBreakdown.taxableST)} / ${fmt2(taxBreakdown.taxableLT)}</p></div>
-            <div><p className="text-[10px] text-slate-500 uppercase tracking-wider">Est. Tax</p><p className="text-sm font-semibold text-red-400 tabular-nums">${fmt2(totalTax)}</p></div>
+            <div><p className="text-[10px] text-slate-500 dark:text-slate-500 uppercase tracking-wider">Taxable ST / LT</p><p className="text-xs font-semibold text-slate-900 dark:text-white tabular-nums">${fmt2(taxBreakdown.taxableST)} / ${fmt2(taxBreakdown.taxableLT)}</p></div>
+            <div><p className="text-[10px] text-slate-500 dark:text-slate-500 uppercase tracking-wider">Est. Tax</p><p className="text-sm font-semibold text-red-400 tabular-nums">${fmt2(totalTax)}</p></div>
           </div>
-          <p className="text-[10px] text-slate-500 mt-2">Net after tax: <span className="text-emerald-400 font-semibold">${fmt2(displaySummary.gainLoss - totalTax)}</span> · rough estimate, not tax advice</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-2">Net after tax: <span className="text-emerald-400 font-semibold">${fmt2(displaySummary.gainLoss - totalTax)}</span> · rough estimate, not tax advice</p>
         </div>
 
         {/* Portfolio allocation change */}
         {allocation.length > 0 && (
-          <div className="border-t border-slate-800 pt-4">
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
             <div className="flex items-center gap-1.5 mb-3">
               <Percent className="w-3.5 h-3.5 text-slate-500" />
-              <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Allocation After Sale</h3>
+              <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Allocation After Sale</h3>
             </div>
             <div className="space-y-2">
               {allocation.map(a => (
                 <div key={a.ticker} className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-200">{a.ticker}</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">{a.ticker}</span>
                   <span className="flex items-center gap-1.5 tabular-nums">
-                    <span className="text-slate-400">{a.before.toFixed(1)}%</span>
-                    <ArrowRight className="w-3 h-3 text-slate-600" />
+                    <span className="text-slate-500 dark:text-slate-400">{a.before.toFixed(1)}%</span>
+                    <ArrowRight className="w-3 h-3 text-slate-400 dark:text-slate-600" />
                     <span className={a.after < a.before ? 'text-red-400' : 'text-emerald-400'}>{a.after.toFixed(1)}%</span>
                   </span>
                 </div>
@@ -389,11 +389,11 @@ function SelectionSidePanel({ selectedLotObjects, summary, portfolio, onClear, o
         )}
       </div>
 
-      <div className="px-5 py-4 border-t border-slate-700 shrink-0 flex gap-2">
+      <div className="px-5 py-4 border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-2">
         <button onClick={onSell} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors">
           <DollarSign className="w-3.5 h-3.5" /> Sell Lots
         </button>
-        <button onClick={onClear} className="px-3 py-2.5 text-xs font-semibold rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors">
+        <button onClick={onClear} className="px-3 py-2.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
           Clear
         </button>
       </div>
@@ -795,13 +795,13 @@ function FilteredPieTooltip({ active, payload, mode }) {
   const d = payload[0].payload;
   const val = d[mode === 'loss' ? 'loss' : 'gain'];
   return (
-    <div className="bg-slate-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg space-y-0.5">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs px-3 py-2 rounded-lg shadow-lg space-y-0.5">
       <div className="font-semibold">{d.ticker}</div>
-      {d.name && <div className="text-slate-400">{d.name}</div>}
+      {d.name && <div className="text-slate-500 dark:text-slate-400">{d.name}</div>}
       <div className={mode === 'loss' ? 'text-red-400' : 'text-emerald-400'}>
         {mode === 'loss' ? '-' : '+'}${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </div>
-      <div className="text-slate-300">{d.pct.toFixed(1)}% of total</div>
+      <div className="text-slate-600 dark:text-slate-300">{d.pct.toFixed(1)}% of total</div>
     </div>
   );
 }
@@ -849,14 +849,14 @@ function FilterSidePanel({ stocks, mode, onTickerClick, onClose }) {
   const netTotal = totalGain + totalLoss;
 
   return (
-    <div className="shrink-0 bg-slate-900 w-full sm:w-80 border-t sm:border-t-0 sm:border-l border-slate-700">
+    <div className="shrink-0 bg-white dark:bg-slate-900 w-full sm:w-80 border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-700">
       <div className="w-full sm:w-80 h-full flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 shrink-0">
-          <h2 className={`text-sm font-bold ${isOverall ? 'text-slate-100' : mode === 'loss' ? 'text-red-400' : 'text-emerald-400'}`}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
+          <h2 className={`text-sm font-bold ${isOverall ? 'text-slate-900 dark:text-slate-100' : mode === 'loss' ? 'text-red-400' : 'text-emerald-400'}`}>
             {isOverall ? 'Overall by Ticker' : mode === 'loss' ? 'Losses' : 'Gains'}
           </h2>
           {!isOverall && (
-            <button onClick={onClose} className="p-1.5 -m-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
+            <button onClick={onClose} className="p-1.5 -m-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               <XIcon className="w-4 h-4" />
             </button>
           )}
@@ -864,7 +864,7 @@ function FilterSidePanel({ stocks, mode, onTickerClick, onClose }) {
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {pieData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-slate-500">
+            <div className="flex flex-col items-center justify-center py-10 text-slate-500 dark:text-slate-500">
               {mode === 'loss' ? <TrendingDown className="w-8 h-8 mb-2 opacity-30" /> : <TrendingUp className="w-8 h-8 mb-2 opacity-30" />}
               <p className="text-xs text-center">{mode === 'loss' ? 'No loss positions — all lots are profitable.' : mode === 'gain' ? 'No gain positions — all lots are at a loss.' : 'No holdings yet.'}</p>
             </div>
@@ -887,34 +887,34 @@ function FilterSidePanel({ stocks, mode, onTickerClick, onClose }) {
               {isOverall ? (
                 <div className="flex justify-between gap-2 -mt-2 mb-4">
                   <div className="text-left">
-                    <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Gaining</div>
+                    <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider">Gaining</div>
                     <div className="text-sm font-bold tabular-nums text-emerald-400">+${fmt2(totalGain)}</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Net</div>
+                    <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider">Net</div>
                     <div className={`text-sm font-bold tabular-nums ${netTotal >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{netTotal >= 0 ? '+' : '-'}${fmt2(Math.abs(netTotal))}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Losing</div>
+                    <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider">Losing</div>
                     <div className="text-sm font-bold tabular-nums text-red-400">-${fmt2(Math.abs(totalLoss))}</div>
                   </div>
                 </div>
               ) : (
                 <div className="text-center -mt-2 mb-4">
-                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{totalLabel}</div>
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider">{totalLabel}</div>
                   <div className={`text-xl font-bold tabular-nums ${totalColor}`}>{totalFmt}</div>
                 </div>
               )}
               <div className="space-y-1">
                 {pieData.map((d, i) => (
                   <button key={d.ticker} onClick={() => onTickerClick?.(d.ticker)}
-                    className="w-full flex items-center gap-2 text-xs hover:bg-slate-800 rounded-lg px-2 py-1.5 transition-colors text-left">
+                    className="w-full flex items-center gap-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2 py-1.5 transition-colors text-left">
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isOverall ? (d.value >= 0 ? OVERALL_GAIN_COLOR : OVERALL_LOSS_COLOR) : COLORS[i % COLORS.length] }} />
-                    <span className="font-medium text-slate-200 truncate">{d.ticker}</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-200 truncate">{d.ticker}</span>
                     <span className={`tabular-nums shrink-0 ml-auto ${isOverall ? (d.value >= 0 ? 'text-emerald-400' : 'text-red-400') : totalColor}`}>
                       {isOverall ? `${d.value >= 0 ? '+' : '-'}$${fmt2(Math.abs(d.value))}` : `${mode === 'loss' ? '-' : '+'}$${fmt2(mode === 'loss' ? d.loss : d.gain)}`}
                     </span>
-                    <span className="tabular-nums shrink-0 text-slate-500 w-9 text-right">{d.pct.toFixed(0)}%</span>
+                    <span className="tabular-nums shrink-0 text-slate-500 dark:text-slate-500 w-9 text-right">{d.pct.toFixed(0)}%</span>
                   </button>
                 ))}
               </div>
